@@ -1,0 +1,294 @@
+CREATE TYPE chrl.YesNo AS ENUM ('Y', 'N');
+CREATE TABLE chrl.site_description(
+    SiteID         SMALLINT      PRIMARY KEY, 
+    Install_Date   DATE          NOT NULL,
+    Lat            NUMERIC(7, 5) NOT NULL,
+    Lon            NUMERIC(8, 5) NOT NULL,
+    Elevation      NUMERIC(4, 1) NOT NULL,
+    Width_D        NUMERIC(5, 2),
+    Max_Depth_D    NUMERIC(5, 2),
+    Width_EC       NUMERIC(5, 2),
+    Max_Depth_EC   NUMERIC(5, 2),
+    Slope          NUMERIC(4, 2),
+    Dist_D_EC      NUMERIC(6, 2),
+    Active         chrl.YesNo  NOT NULL,
+    Deactivation_Date DATE
+);
+ALTER TABLE chrl.site_description    
+ADD CONSTRAINT Needs_a_deactivation_date_as_site_is_not_active
+CHECK(NOT (Active='N' AND Deactivation_Date IS NULL));
+
+ALTER TABLE chrl.site_description    
+ADD CONSTRAINT Since_site_is_active_there_should_be_no_deactivation_date
+CHECK(NOT (Active='Y' AND Deactivation_Date IS NOT NULL));
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Install_date_must_come_before_deactivation_date
+CHECK (Deactivation_Date > Install_Date);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Width_D_needs_to_be_positive   
+CHECK (Width_D > 0);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Width_EC_needs_to_be_positive   
+CHECK (Width_EC > 0);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Max_Depth_D_needs_to_be_positive   
+CHECK (Max_Depth_D> 0);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Max_Depth_EC_needs_to_be_positive   
+CHECK (Max_Depth_EC> 0);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Slope_needs_to_be_positive   
+CHECK (Slope> 0);
+
+ALTER TABLE chrl.site_description
+ADD CONSTRAINT Dist_D_EC_needs_to_be_positive   
+CHECK (Dist_D_EC> 0);
+
+
+
+CREATE TYPE chrl.pmp as ENUM('Unknown', 'Pre', 'Mid', 'Post');
+CREATE TYPE chrl.loc as ENUM('On Site', 'Lab');
+CREATE TABLE chrl.calibration_events(
+     CalEventID        SERIAL   PRIMARY KEY,
+     PeriodID          INTEGER,
+     SiteID            SMALLINT,
+     Date              DATE        NOT NULL,
+     PMP               chrl.pmp         NOT NULL,
+     Trial             SMALLINT    NOT NULL,
+     Location          chrl.loc         NOT NULL
+);
+ALTER SEQUENCE chrl.calibration_events_caleventid_seq RESTART WITH 258;
+
+
+CREATE TYPE chrl.fcalresults as ENUM('L','H');
+CREATE TABLE chrl.calibration_results(
+    CalResultsID      SERIAL   NOT NULL PRIMARY KEY,
+    CalEventID        INTEGER,
+    SiteID	      SMALLINT,
+    SensorID          INTEGER,
+    Trial_Number      SMALLINT,
+    Temp	      NUMERIC(4,2),
+    CF_Value          NUMERIC(6, 5),
+    Per_Err           NUMERIC(6, 4),
+    Flags	      chrl.fcalresults,
+    Notes             TEXT,
+    Link              TEXT
+);
+ALTER SEQUENCE chrl.calibration_results_calresultsid_seq RESTART WITH 921;
+
+
+CREATE TABLE chrl.barrel_periods(
+    PeriodID      SERIAL   PRIMARY KEY,
+    SiteID        SMALLINT,
+    Starting_Date DATE,
+    Ending_Date   DATE
+);
+ALTER TABLE chrl.barrel_periods
+ADD CONSTRAINT Starting_date_must_occur_before_Ending_date
+CHECK (Starting_Date<Ending_Date)
+
+CREATE UNIQUE INDEX Ending_date_can_only_be_null_once_per_site
+   ON chrl.barrel_periods (SiteID) 
+   WHERE Ending_Date IS NULL;
+
+ALTER SEQUENCE chrl.barrel_periods_periodid_seq RESTART WITH 63;
+
+CREATE TYPE chrl.RiverL as ENUM('RR','RL','RR-L','RR-H','RL-L','RL-H','RC','Lab');
+CREATE TYPE chrl.SensorTypes as ENUM('WQ','THRECS','Fathom');
+CREATE TABLE chrl.sensors(
+    SensorID  SERIAL PRIMARY KEY,
+    SiteID  SMALLINT,
+    Probe_Number  INTEGER,
+    Sensor_Type   chrl.SensorTypes   NOT NULL,
+    Serial_Number VARCHAR(15),
+    River_Loc	  chrl.RiverL, 
+    Install_Date  DATE,
+    Deactivation_Date DATE
+);
+
+ALTER TABLE chrl.sensors
+ADD CONSTRAINT Install_date_must_come_before_deactivation_date
+CHECK (Deactivation_Date > Install_Date);
+
+ALTER SEQUENCE chrl.sensors_sensorid_seq RESTART WITH 53;
+
+
+
+
+
+CREATE TYPE chrl.StageDirec as  ENUM('R', 'F', 'C');
+CREATE TABLE chrl.autosalt_summary(
+    EventID    BIGINT          NOT NULL,
+    SiteID     SMALLINT     NOT NULL,
+    PeriodID   INTEGER,
+    Date       DATE          NOT NULL,
+    Temp       NUMERIC(4,1),
+    Start_Time TIME ,
+    Stage_Start   NUMERIC(7, 2),
+    Stage_Average NUMERIC(7, 2),
+    Stage_Min NUMERIC(7, 2),
+    Stage_Max NUMERIC(7, 2),
+    Stage_Std NUMERIC(4, 2),
+    Stage_Dir chrl.StageDirec,
+    Salt_Volume NUMERIC(7, 3),
+    Discharge_Avg NUMERIC(6, 3),
+    Uncert NUMERIC(6, 3),
+    Flags  VARCHAR(30),
+    ECb    VARCHAR(10),
+    Mixing NUMERIC (5,2), 
+    Notes  TEXT ,
+    PRIMARY KEY(EventID, SiteID)
+);
+
+CREATE TABLE chrl.All_Discharge_Calcs(
+    DischargeID    SERIAL  PRIMARY KEY,
+    EventID    BIGINT     NOT NULL,
+    SiteID     SMALLINT   NOT NULL,
+    SensorID   INTEGER    NOT NULL,
+    CFID       INTEGER    NOT NULL,
+    Discharge  NUMERIC(6,3),
+    Uncertainty   NUMERIC(5, 3),
+    Used chrl.YesNo
+);
+ALTER SEQUENCE chrl.all_discharge_calcs_dischargeid_seq RESTART WITH 3463
+
+CREATE TABLE chrl.salt_waves(
+    WaveID    SERIAL   PRIMARY KEY,
+    SiteID    SMALLINT NOT NULL,
+    EventID   BIGINT NOT NULL,
+    SensorID  INTEGER,
+    Start_ECWave TIME,
+    End_ECWave   TIME,
+    Time_MaxEC   TIME,
+    StartingEC   NUMERIC(5, 2),
+    EndingEC     NUMERIC(5, 2),
+    PeakEC       NUMERIC(5, 2),
+    Flags        VARCHAR(40), 
+    Comments     TEXT	
+);
+ALTER SEQUENCE chrl.salt_waves_waveid_seq RESTART WITH 1985;
+
+CREATE TABLE chrl.autosalt_forms(
+    DocID      SERIAL PRIMARY KEY,
+    EventID    BIGINT NOT NULL,
+    SiteID     SMALLINT NOT NULL,
+    Link       TEXT NOT NULL,
+    Checked    YesNo   NOT NULL,
+    Edits_Made YesNo
+);
+ALTER TABLE chrl.autosalt_forms  
+ADD CONSTRAINT were_edits_made_after_checking_the_sheet
+CHECK(NOT (Checked='Y' AND Edits_Made IS NULL));
+ALTER SEQUENCE chrl.autosalt_forms_docid_seq RESTART WITH 1121;
+
+
+CREATE TYPE chrl.method AS ENUM('Propeller', 'Flow Tracker', 'Salt');
+CREATE TABLE chrl.manual_discharge(
+    MDisID     SERIAL    PRIMARY KEY,
+    SiteID     SMALLINT  NOT NULL,
+    Date       DATE      NOT NULL,
+    Time       TIME ,
+    Instream_Loc VARCHAR(5),
+    Stage      NUMERIC(7, 2),
+    Discharge  NUMERIC(6, 3)  NOT NULL,
+    Uncert     NUMERIC(6, 3),
+    Method     chrl.method     NOT NULL,
+    Comment    TEXT,
+    Images     BYTEA,
+    Link    TEXT
+);
+
+ALTER TABLE chrl.manual_discharge
+ADD CONSTRAINT Stage_needs_to_be_positive   
+CHECK (Stage > 0);
+
+ALTER TABLE chrl.manual_discharge
+ADD CONSTRAINT Discharge_needs_to_be_positive   
+CHECK (Discharge > 0);
+
+ALTER TABLE chrl.manual_discharge
+ADD CONSTRAINT Uncert_needs_to_be_positive   
+CHECK (Uncert > 0);
+
+ALTER SEQUENCE chrl.manual_discharge_mdisid_seq RESTART WITH 241;
+
+
+CREATE TABLE chrl.RC_summary(
+    RCID    SERIAL   PRIMARY  KEY,
+    SiteID  SMALLINT NOT NULL,
+    Version SMALLINT  NOT NULL,
+    Start_Date   Date NOT NULL,
+    End_Date     Date NOT NULL,
+    Shift        chrl.YesNo,
+    Notes        TEXT,
+    Link1        TEXT,
+    Link2        TEXT
+);
+
+CREATE UNIQUE INDEX     can_not_have_multiple_of_the_same_version_number_per_site
+   ON chrl.RC_summary (SiteID,Version);
+
+ALTER TABLE chrl.RC_summary
+ADD CONSTRAINT Start_date_must_come_before_End_date
+CHECK (End_Date > Start_Date);
+
+ALTER SEQUENCE chrl.rc_summary_rcid_seq RESTART WITH 29;
+
+
+
+
+CREATE TABLE chrl.RCAutoSalt(
+    RCAutoID   SERIAL  PRIMARY KEY,
+    SiteID     SMALLINT NOT NULL ,
+    EventID    BIGINT NOT NULL,
+    RCID       INTEGER NOT NULL,
+    EventNo    INTEGER
+);
+ALTER SEQUENCE chrl.rcautosalt_rcautoid_seq RESTART WITH 844;
+
+
+CREATE TABLE chrl.RCManual(
+    RCManualID   SERIAL  PRIMARY KEY,
+    SiteID       SMALLINT NOT NULL,
+    MDisID       BIGINT NOT NULL,
+    RCID         INTEGER NOT NULL,
+    EventNo      INTEGER
+);
+ALTER SEQUENCE chrl.rcmanual_rcmanualid_seq RESTART WITH 279;
+
+
+#Creating Foreign Keys
+ALTER TABLE chrl.sensors ADD CONSTRAINT FKSiteID_Sensors FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE chrl.barrel_periods ADD CONSTRAINT FKSiteID_BP FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE chrl.rc_summary ADD CONSTRAINT FKSiteID_RCS FOREIGN KEY (SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE chrl.calibration_events ADD CONSTRAINT FKSiteID_CalEvents FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE chrl.calibration_events ADD CONSTRAINT FKPID_CalEvents FOREIGN KEY(PeriodID) REFERENCES chrl.barrel_periods(PeriodID) ON DELETE RESTRICT ON UPDATE RESTRICT;
+ALTER TABLE chrl.calibration_results ADD CONSTRAINT FKCalID_CalResults FOREIGN KEY(CalEventID) REFERENCES chrl.calibration_events(CalEventID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.calibration_results ADD CONSTRAINT FKSensor_CalResults FOREIGN KEY(SensorID) REFERENCES chrl.sensors(SensorID) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+
+ALTER TABLE chrl.autosalt_summary ADD CONSTRAINT FKPID_DisSummary FOREIGN KEY (PeriodID) REFERENCES chrl.barrel_periods(PeriodID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE chrl.autosalt_summary ADD CONSTRAINT FKSiteID_DisSummary FOREIGN KEY (SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE chrl.salt_waves ADD CONSTRAINT FKSensor_SaltWave FOREIGN KEY (SensorID) REFERENCES chrl.sensors(SensorID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE chrl.salt_waves ADD CONSTRAINT FKEvent_SaltWave FOREIGN KEY(EventID, SiteID) REFERENCES chrl.autosalt_summary(EventID, SiteID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.autosalt_forms ADD CONSTRAINT FKEvent_Links FOREIGN KEY (EventID, SiteID) REFERENCES chrl.autosalt_summary(EventID, SiteID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.manual_discharge ADD CONSTRAINT FKSiteID_Manual FOREIGN KEY (SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE chrl.all_discharge_calcs ADD CONSTRAINT FKEvent_AllDis FOREIGN KEY (EventID,SiteID) REFERENCES chrl.autosalt_summary(EventID, SiteID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.all_discharge_calcs ADD CONSTRAINT FKSensorID_AllDis FOREIGN KEY (SensorID) REFERENCES chrl.sensors(SensorID) ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE chrl.all_discharge_calcs ADD CONSTRAINT FKDFID_AllDis FOREIGN KEY (CFID) REFERENCES chrl.calibration_results(CalResultsID) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+
+ALTER TABLE chrl.rcautosalt ADD CONSTRAINT FKRC_RCAutoSalt FOREIGN KEY(RCID) REFERENCES chrl.rc_summary(RCID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.rcautosalt ADD CONSTRAINT FKEvent_RCAutoSalt FOREIGN KEY(EventID, SiteID) REFERENCES chrl.autosalt_summary(EventID, SiteID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKEvent_RCManual FOREIGN KEY(MDisID) REFERENCES chrl.manual_discharge(MDisID) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKSiteID_RCManual FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKRC_RCManual FOREIGN KEY(RCID) REFERENCES chrl.rc_summary(RCID) ON DELETE CASCADE ON UPDATE CASCADE;
+
