@@ -48,7 +48,7 @@ options(warn = - 1)
 
 #connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(email=Sys.getenv('email_gdrive'))
+# drive_auth(email=Sys.getenv('email_gdrive'))
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
@@ -78,12 +78,14 @@ for (S in Stations){
   colnames(Dump_Event) <- CNames
   
   #Old Events--> those that have already be analyized 
-  query <- sprintf("SELECT EventID,SiteID FROM autosalt_summary WHERE SiteID=%i",S)
+  query <- sprintf("SELECT EventID,SiteID FROM chrl.autosalt_summary WHERE SiteID=%i",S)
   Old_Events <- dbGetQuery(con, query)
   
   #New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[(which(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid))), ]
-  New_Events <- New_Events[20:nrow(New_Events),]
+  New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
+  # New_Events <- New_Events[20:nrow(New_Events),]
+  New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
+  
   
   #Summary dataframe for the data that will be exported to CSV
   Discharge_Summary<-data.frame()
@@ -93,7 +95,7 @@ for (S in Stations){
   # 
   # Number= sample(1:nrow(New_Events),1)
   
-  for (N in c(100) ){ #c(1:nrow(New_Events))){
+  for (N in c(1:35)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     #Keep track of how the code is running (will remove in final code)
@@ -128,17 +130,17 @@ for (S in Stations){
     #########################################
     #Determine the barrel period of the event
     #########################################
-    query <- sprintf("SELECT * FROM barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date >= '%s') AND (SiteID=%s)",Date,Date,S)
+    query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date >= '%s') AND (SiteID=%s)",Date,Date,S)
     Periods <- dbGetQuery(con, query)
     
     # If end period is NA,  indicates the event happpened in the current barrel period
     if (nrow(Periods)==0){
-      query <- sprintf("SELECT * FROM barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date IS NULL) AND (SiteID='%s')",Date,S)
+      query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date IS NULL) AND (SiteID='%s')",Date,S)
       Periods <- dbGetQuery(con, query)
     }
     
     if (nrow(Periods)==0){
-      query <- sprintf("SELECT * FROM barrel_periods WHERE (Starting_Date IS NULL) AND (Ending_Date >= '%s') AND (SiteID='%s')",Date,S)
+      query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date IS NULL) AND (Ending_Date >= '%s') AND (SiteID='%s')",Date,S)
       Periods <- dbGetQuery(con, query)
     }
     
@@ -146,7 +148,7 @@ for (S in Stations){
     
     #####################################################
     # See how many CF have happenied in the barrel period
-    query <- sprintf("SELECT * FROM calibration_events WHERE (PeriodID=%i)",Period_ID)
+    query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
     Barrel_Period_CFs <- dbGetQuery(con, query)
     
     if (nrow(Barrel_Period_CFs)<4 & is.null(Periods$ending_date)==TRUE){
@@ -186,6 +188,8 @@ for (S in Stations){
       EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
       DisSummaryComm='From Autodose event system'
+      file.remove(EC_filename)
+      
       
     } else {
       EC <- read.csv(EC_filename,skip=4, header=F,as.is=T)
@@ -214,6 +218,7 @@ for (S in Stations){
                      Mixing= NA, Notes= NA)
       Discharge_Summary= rbind(Discharge_Summary,DS)
       file.remove(AutoDose_filename)
+      file.remove(EC_filename)
       next()
     }
     
@@ -433,36 +438,42 @@ for (S in Stations){
       #####################################
       #Checking for spikes in salt wave
       #####################################
-      EC_saltwave <- EC[(EC$Sec>Starting_time)&(EC$Sec<Ending_time),]
       
-      count <- 0
-      for (i in c(2:nrow(EC_saltwave))){
-        #check the difference between consecutive EC values
-        diff_EC <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i-1),EC_Cols]
+      if(Starting_time > Ending_time | Ending_time< Starting_time+45){
+        Comment= append(Comment,'Pw') #partial wave occurring
+      } else {
+        EC_saltwave <- EC[(EC$Sec>Starting_time)&(EC$Sec<Ending_time),]
         
-        #check to see if, after a large dip/jump in EC, it rebounds to previous levels
-        if (abs(diff_EC) >4){
-          for (j in c(1,2,3)){
-            if ((i+j) > nrow(EC_saltwave)){
-              break
+        count <- 0
+        for (i in c(2:nrow(EC_saltwave))){
+          #check the difference between consecutive EC values
+          diff_EC <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i-1),EC_Cols]
+          
+          #check to see if, after a large dip/jump in EC, it rebounds to previous levels
+          if (abs(diff_EC) >4){
+            for (j in c(1,2,3)){
+              if ((i+j) > nrow(EC_saltwave)){
+                break
+              }
+              
+              diff_try <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i+j),EC_Cols]
+              if (abs(diff_try)>4){
+                Comment <- append(Comment,'S') #Spike in the EC wave
+                count <-  1
+                break
+              }
             }
             
-            diff_try <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i+j),EC_Cols]
-            if (abs(diff_try)>4){
-              Comment <- append(Comment,'S') #Spike in the EC wave
-              count <-  1
-              break
-            }
           }
           
+          #break point to jump out of for loop 
+          if (count==1){
+            break
+          }
         }
         
-        #break point to jump out of for loop 
-        if (count==1){
-          break
-        }
       }
-      
+     
       #################################
       # Additional flags for salt waves
       #################################
@@ -474,28 +485,30 @@ for (S in Stations){
         Comment <- append(Comment, 'Sd') #Noisy with high Standard Deviation
       }
       
-      
-      ##Checking noise levels within saltwave
-      if (!('N' %in% Comment)){
-        FirstHalf <- EC[EC$Sec> Starting_time & EC$Sec <Time_Max, EC_Cols]
-        SecondHalf <- EC[EC$Sec< Ending_time & EC$Sec >Time_Max, EC_Cols]
-        Dif1 <- array(); Dif2 <- array()
-        for(x in c(2:length(FirstHalf))){
-          Dif1 <- append(Dif1, (FirstHalf[x]-FirstHalf[x-1]))
-        }
-        for (x in c(2:length(SecondHalf))){
-          Dif2 <- append(Dif2, (SecondHalf[x]-SecondHalf[x-1]))
-        }
-        Dif1 <- Dif1[which(Dif1 !=0)]
-        Dif2 <- Dif2[which(Dif2 !=0)]
-        
-        if (sd(Dif1)>2.1| sd(Dif2)>2.1){
-          if (!('Sd' %in% Comment)){
-            Comment <- append(Comment, 'Sd')
+      if (!('Pw' %in% Comment)){
+        if (!('N' %in% Comment)){
+          FirstHalf <- EC[EC$Sec> Starting_time & EC$Sec <Time_Max, EC_Cols]
+          SecondHalf <- EC[EC$Sec< Ending_time & EC$Sec >Time_Max, EC_Cols]
+          Dif1 <- array(); Dif2 <- array()
+          for(x in c(2:length(FirstHalf))){
+            Dif1 <- append(Dif1, (FirstHalf[x]-FirstHalf[x-1]))
+          }
+          for (x in c(2:length(SecondHalf))){
+            Dif2 <- append(Dif2, (SecondHalf[x]-SecondHalf[x-1]))
+          }
+          Dif1 <- Dif1[which(Dif1 !=0)]
+          Dif2 <- Dif2[which(Dif2 !=0)]
+          
+          if (sd(Dif1)>2.1| sd(Dif2)>2.1){
+            if (!('Sd' %in% Comment)){
+              Comment <- append(Comment, 'Sd')
+            }
           }
         }
+        
       }
-      
+      ##Checking noise levels within saltwave
+
       # Checking for low EC values
       if (mean(EC[,HED],na.rm=TRUE)<10){
         Comment <- append(Comment,'L') #Low EC values, may not be submerged
@@ -527,12 +540,44 @@ for (S in Stations){
       Probe <- Probe+1
       }
     }
-      
+    ##########################################################
+    # Check for the no wave flag (N) for final database summary
+    ###########################################################
+    for (r in c(1:nrow(EC_curve_results))){
+      C_split <- unlist(strsplit(EC_curve_results[r,'Comment'], ","))
+      if (length(C_split)==0 | length(which(C_split=='N'))==0 ){
+        NoWave_Flag <- 'No'
+        break()
+      }
+      if (r==nrow(EC_curve_results)){
+        NoWave_Flag <- 'Yes'
+      }
+    }
+    
+    if(NoWave_Flag=='Yes'){
+      DS_Flag <- 'NW'
+    } else {
+      DS_Flag <- NA
+    }
+    
+    PartialWave_Flag =NA
+    for (r in c(1:nrow(EC_curve_results))){
+      C_split <- unlist(strsplit(EC_curve_results[r,'Comment'], ","))
+      if (length(which(C_split=='Pw'))!=0 ){
+        PartialWave_Flag <- 'Yes'
+        break()
+      }
+    }
+    
+    if(is.na(PartialWave_Flag)==FALSE){
+      DS_Flag <- 'PW'
+    } 
+    
       
     ###########################################
     # Look for timing offset between salt waves
     ###########################################
-    if (length(which(is.na(EC_curve_results$Time_Max)==TRUE))< length(EC_curve_results$Time_Max)){
+    if (length(which(is.na(EC_curve_results$Time_Max)==TRUE))< length(EC_curve_results$Time_Max) & (is.na(DS_Flag)==TRUE)){
         Combo <- combn(EC_curve_results$Time_Max,2)
         D_Array <- array()
         for (C in c(1:ncol(Combo))){
@@ -555,8 +600,10 @@ for (S in Stations){
     ##########################################
     # Summary of ECb trends for final database
     ##########################################
-      
-    if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))==0){
+    
+    if (is.na(DS_Flag)==FALSE){
+      ECB_overall <- NA
+    } else if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))==0){
       ECB_overall <- NA
     } else if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))>1){
       ECB_overall <- 'M'
@@ -569,39 +616,22 @@ for (S in Stations){
     }
     
     
-    ##########################################################
-    # Check for the no wave flag (N) for final database summary
-    ###########################################################
-    for (r in c(1:nrow(EC_curve_results))){
-      C_split <- unlist(strsplit(EC_curve_results[r,'Comment'], ","))
-      if (length(C_split)==0 | length(which(C_split=='N'))==0 ){
-        NoWave_Flag <- 'No'
-        break()
-      }
-      if (r==nrow(EC_curve_results)){
-        NoWave_Flag <- 'Yes'
-      }
-    }
-      
-    if(NoWave_Flag=='Yes'){
-      DS_Flag <- 'NW'
-    } else {
-      DS_Flag <- NA
-    }
-      
+  
+    
+    
     ###############################################
     # Find what sensors are in use during the event
     ###############################################
     ActiveSensor <- data.frame()
     for (P in c(1,2,3,4,5)){
-      query <- sprintf("SELECT * FROM sensors WHERE Install_Date < '%s' AND SiteID=%s AND Deactivation_Date > '%s' AND Probe_Number=%s",Date,SiteID,Date,P)
+      query <- sprintf("SELECT * FROM chrl.sensors WHERE Install_Date < '%s' AND SiteID=%s AND Deactivation_Date > '%s' AND Probe_Number=%s",Date,SiteID,Date,P)
       Act <- dbGetQuery(con, query)
       if (nrow(Act)<1){
-        query  <- sprintf("SELECT * FROM sensors WHERE Install_Date < '%s' AND SiteID=%s AND Deactivation_Date IS NULL AND Probe_Number=%s",Date,SiteID,P)
+        query  <- sprintf("SELECT * FROM chrl.sensors WHERE Install_Date < '%s' AND SiteID=%s AND Deactivation_Date IS NULL AND Probe_Number=%s",Date,SiteID,P)
         Act <- dbGetQuery(con, query)
       } 
       if (nrow(Act)<1){
-        query <- sprintf("SELECT * FROM sensors WHERE Install_Date IS NULL AND SiteID=%s AND Deactivation_Date IS NULL AND Probe_Number=%s",SiteID,P)
+        query <- sprintf("SELECT * FROM chrl.sensors WHERE Install_Date IS NULL AND SiteID=%s AND Deactivation_Date IS NULL AND Probe_Number=%s",SiteID,P)
         Act <- dbGetQuery(con, query)
       } 
       if(nrow(Act)<1){
@@ -678,7 +708,9 @@ for (S in Stations){
       ST <- EC_curve_results[R,'Starting_Time']
       ET <- EC_curve_results[R,'Ending_Time']
       
-      if(is.na(EC_curve_results[R,"Starting_EC"])==TRUE){
+      if(is.na(EC_curve_results[R,"Starting_EC"])==TRUE ){
+        Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
+      } else if  (ST > ET){
         Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
       } else {
         Stage_Event <- Stage_Subset[Stage_Subset$Sec > ST & Stage_Subset$Sec < ET, ]
@@ -796,12 +828,14 @@ for (S in Stations){
     saveWorkbook(wb,sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
     
     # # Upload excel sheet to google drive and save 
-    drive_upload(media=sprintf("Trials/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date))
-    autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
+    # drive_upload(media=sprintf("Trials/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date))
+    # autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
 
     # Save google drive info for database
-    ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
+    # ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
+    ASlink <-data.frame(EventID=Event_Num,SiteID=S,Link= NA,Checked='N')
     Autosalt_forms <- rbind(Autosalt_forms,ASlink)
+    # file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
 
     
     ##-------------------------------------------------------------------------------------------------------------------------------------
@@ -829,7 +863,7 @@ for (S in Stations){
       PMP <- Cal_to_use[Cal_to_use$caleventid==i,]$pmp[1]
         
       # extract calibration results
-      query <- sprintf("SELECT * FROM calibration_results WHERE caleventid=%i",i)
+      query <- sprintf("SELECT * FROM chrl.calibration_results WHERE caleventid=%i",i)
       Cal_Result <- dbGetQuery(con, query)
       
       # Only use cal results that don't have flags
@@ -838,7 +872,7 @@ for (S in Stations){
       # get all CF records associated with a particular ID
       for (Sensor_ID in unique(Cal_Result$sensorid)){
         
-        query <- sprintf("SELECT * FROM sensors WHERE (sensorid=%i)",Sensor_ID)
+        query <- sprintf("SELECT * FROM chrl.sensors WHERE (sensorid=%i)",Sensor_ID)
         Sensor_info <- dbGetQuery(con, query)
         
         Probe_Num <- Sensor_info$probe_number[1]
@@ -900,7 +934,7 @@ for (S in Stations){
       SID <- ActiveSensor[ActiveSensor$probe_number==Sen,'sensorid']
       
       # if there is no Start time then we can not calculate discharge
-      if(is.na(Start)==TRUE){
+      if(is.na(Start)==TRUE | (Start>End)){
         DR <- data.frame(SiteID=SiteID, EventID=Event_Num, SensorID=SID, CFID=NA, Discharge=NA, Err=NA, CalEventID=NA )
         Discharge_Results <- rbind(Discharge_Results,DR)
         next()
@@ -1025,7 +1059,7 @@ for (S in Stations){
     Discharge_Summary <- rbind(Discharge_Summary,DS)
     file.remove(EC_filename)
     file.remove(Stage_filename)
-    # file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
+    file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
     next()
   }
   
@@ -1075,7 +1109,6 @@ for (S in Stations){
     
     file.remove(EC_filename)
     file.remove(Stage_filename)
-    # file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
     
   }
   
@@ -1090,13 +1123,13 @@ for (S in Stations){
 # #   #Autosalt Summary
 #   for (r in c(1:nrow(Discharge_Summary))){
 # 
-#     Query <- sprintf("INSERT INTO autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,'%s','%s','%s',%s);",
+#     Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
 #             Discharge_Summary[r,"EventID"],
 #             Discharge_Summary[r,"SiteID"],
 #             Discharge_Summary[r,"PeriodID"],
 #             Discharge_Summary[r,'Date'],
 #             Discharge_Summary[r,"Temp"],
-#             Discharge_Summary[R,"Start_Time"],
+#             Discharge_Summary[r,"Start_Time"],
 #             Discharge_Summary[r,"Stage_DoseRelease"],
 #             Discharge_Summary[r,"Stage_Average"],
 #             Discharge_Summary[r,"Stage_Min"],
@@ -1108,8 +1141,9 @@ for (S in Stations){
 #             Discharge_Summary[r,"Uncert"],
 #             Discharge_Summary[r,"Flags"],
 #             Discharge_Summary[r,'ECb'],
-#             Discharge_Summary[r,"Notes"],
-#             Discharge_Summary[r,"Mixing"])
+#             Discharge_Summary[r,"Mixing"],
+#             Discharge_Summary[r,"Notes"]
+#             )
 # 
 #     Query <- gsub("\\n\\s+", " ", Query)
 #     Query <- gsub('NA',"NULL",Query)
@@ -1117,30 +1151,31 @@ for (S in Stations){
 #     dbSendQuery(con, Query)
 #   }
 # 
+#   if (nrow(Salt_waves)>0){
+#     for (r in c(1:nrow(Salt_waves))){
+#       Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments)
+#       VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL)",
+#                      Salt_waves[r,"SiteID"],
+#                      Salt_waves[r,"EventID"],
+#                      Salt_waves[r,"SensorID"],
+#                      Salt_waves[r,"Start_ECwave"],
+#                      Salt_waves[r,"End_ECwave"],
+#                      Salt_waves[r,"Time_MaxEC"],
+#                      Salt_waves[r,"StartingEC"],
+#                      Salt_waves[r,"EndingEC"],
+#                      Salt_waves[r,"PeakEC"],
+#                      Salt_waves[r,"Flags"])
+#       Query <- gsub("\\n\\s+", " ", Query)
+#       Query <- gsub('NA',"NULL", Query)
+#       Query <- gsub("'NULL'","NULL",Query)
 # 
-#   for (r in c(1:nrow(Salt_waves))){
-#     Query <- sprintf("INSERT INTO salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments)
-#     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL)",
-#                    Salt_waves[r,"SiteID"],
-#                    Salt_waves[r,"EventID"],
-#                    Salt_waves[r,"SensorID"],
-#                    Salt_waves[r,"Start_ECwave"],
-#                    Salt_waves[r,"End_ECwave"],
-#                    Salt_waves[r,"Time_MaxEC"],
-#                    Salt_waves[r,"StartingEC"],
-#                    Salt_waves[r,"EndingEC"],
-#                    Salt_waves[r,"PeakEC"],
-#                    Salt_waves[r,"Flags"])
-#     Query <- gsub("\\n\\s+", " ", Query)
-#     Query <- gsub('NA',"NULL", Query)
-#     Query <- gsub("'NULL'","NULL",Query)
-#     
-#     dbSendQuery(con, Query)
+#       dbSendQuery(con, Query)
+#     }
 #   }
 # 
 #   if (nrow(All_Discharge)>0){
 #     for (r in c(1:nrow(All_Discharge))){
-#       Query <- sprintf("INSERT INTO all_discharge_calcs (EventID, SiteID, SensorID,CFID, Discharge, Uncertainty,Used) VALUES (%s,%s,%s,%s,%s,%s,'%s')",
+#       Query <- sprintf("INSERT INTO chrl.all_discharge_calcs (EventID, SiteID, SensorID,CFID, Discharge, Uncertainty,Used) VALUES (%s,%s,%s,%s,%s,%s,'%s')",
 #                      All_Discharge[r,'EventID'],
 #                      All_Discharge[r,"SiteID"],
 #                      All_Discharge[r,"SensorID"],
@@ -1155,23 +1190,24 @@ for (S in Stations){
 #     }
 #   }
 # 
+#   if (nrow(Autosalt_forms)>0){
+#     for (r in c(1:nrow(Autosalt_forms))){
 # 
-#   for (r in c(1:nrow(Autosalt_forms))){
-# 
-#     Query <- sprintf("INSERT INTO autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL)",
-#                    Autosalt_forms[r,"EventID"],
-#                    Autosalt_forms[r,"SiteID"],
-#                    Autosalt_forms[r,'Linked']) 
-#     Query <- gsub("\\n\\s+", " ", Query)
-#     Query <- gsub('NA',"NULL", Query)
-#     Query <- gsub("'NULL'","NULL",Query)
-#     # dbSendQuery(con, Query)
+#       Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL)",
+#                      Autosalt_forms[r,"EventID"],
+#                      Autosalt_forms[r,"SiteID"],
+#                      Autosalt_forms[r,'Link'])
+#       Query <- gsub("\\n\\s+", " ", Query)
+#       Query <- gsub('NA',"NULL", Query)
+#       Query <- gsub("'NULL'","NULL",Query)
+#       dbSendQuery(con, Query)
+#     }
 #   }
-
-  write.csv(Discharge_Summary, sprintf('Trials/DischargeSum%s.csv',S))
+# 
+#   write.csv(Discharge_Summary, sprintf('Trials/New_Events_DischargeSum%s.csv',S))
 }
 
 options(warn = 0)
-dbDisconnect(con)
+# dbDisconnect(con)
 
     
