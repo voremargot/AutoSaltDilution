@@ -842,7 +842,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/RC_Manual_Metadata.html",'r'),filesize("HTML/RC_Manual_Metadata.html")));
+		 $this->setDetailedDescription( fread(fopen(			   "HTML/RC_Manual_Metadata.html",'r'),filesize("HTML/RC_Manual_Metadata.html")));
     
             return $result;
         }

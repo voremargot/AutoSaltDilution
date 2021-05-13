@@ -706,8 +706,8 @@
             $this->setExportListRecordAvailable(array());
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
- 		$this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
             $this->setShowFormErrorsOnTop(true);
+ 		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
     
             return $result;
         }

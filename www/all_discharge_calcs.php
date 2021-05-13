@@ -1023,7 +1023,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-		 $this->setDetailedDescription( fread(fopen(			   "HTML/All_Discharge_Metadata.html",'r'),filesize("HTML/All_Discharge_Metadata.html")));
+ 		 $this->setDetailedDescription( fread(fopen(			   "HTML/All_Discharge_Metadata.html",'r'),filesize("HTML/All_Discharge_Metadata.html")));
     
             return $result;
         }

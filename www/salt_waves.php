@@ -58,7 +58,7 @@
                     new StringField('comments')
                 )
             );
-            $this->dataset->AddLookupField('sensorid', 'chrl.sensors', new IntegerField('sensorid'), new IntegerField('siteid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
+            $this->dataset->AddLookupField('sensorid', 'chrl.sensors', new IntegerField('sensorid'), new IntegerField('sensorid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
         }
     
         protected function DoPrepare() {
@@ -205,7 +205,7 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for siteid field
+            // View column for sensorid field
             //
             $column = new NumberViewColumn('sensorid', 'LA1', 'SensorID', $this->dataset);
             $column->SetOrderable(true);
@@ -344,7 +344,7 @@
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for siteid field
+            // View column for sensorid field
             //
             $column = new NumberViewColumn('sensorid', 'LA1', 'SensorID', $this->dataset);
             $column->SetOrderable(true);
@@ -469,12 +469,12 @@
                     new DateField('deactivation_date')
                 )
             );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
+            $lookupDataset->setOrderByField('sensorid', 'ASC');
             $editColumn = new LookUpEditColumn(
                 'SensorID', 
                 'sensorid', 
                 $editor, 
-                $this->dataset, 'sensorid', 'siteid', $lookupDataset);
+                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -613,12 +613,12 @@
                     new DateField('deactivation_date')
                 )
             );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
+            $lookupDataset->setOrderByField('sensorid', 'ASC');
             $editColumn = new LookUpEditColumn(
                 'SensorID', 
                 'sensorid', 
                 $editor, 
-                $this->dataset, 'sensorid', 'siteid', $lookupDataset);
+                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -739,12 +739,12 @@
                     new DateField('deactivation_date')
                 )
             );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
+            $lookupDataset->setOrderByField('sensorid', 'ASC');
             $editColumn = new LookUpEditColumn(
                 'SensorID', 
                 'sensorid', 
                 $editor, 
-                $this->dataset, 'sensorid', 'siteid', $lookupDataset);
+                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -862,7 +862,7 @@
             $grid->AddPrintColumn($column);
             
             //
-            // View column for siteid field
+            // View column for sensorid field
             //
             $column = new NumberViewColumn('sensorid', 'LA1', 'SensorID', $this->dataset);
             $column->SetOrderable(true);
@@ -974,7 +974,7 @@
             $grid->AddExportColumn($column);
             
             //
-            // View column for siteid field
+            // View column for sensorid field
             //
             $column = new NumberViewColumn('sensorid', 'LA1', 'SensorID', $this->dataset);
             $column->SetOrderable(true);
@@ -1076,7 +1076,7 @@
             $grid->AddCompareColumn($column);
             
             //
-            // View column for siteid field
+            // View column for sensorid field
             //
             $column = new NumberViewColumn('sensorid', 'LA1', 'SensorID', $this->dataset);
             $column->SetOrderable(true);

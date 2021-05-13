@@ -1875,9 +1875,9 @@
             $this->setExportSelectedRecordsAvailable(array());
             $this->setExportListRecordAvailable(array());
             $this->setExportOneRecordAvailable(array());
-            $this->setOpenExportedPdfInNewTab(false);    
-		 $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Summary_Metadata.html",'r'),filesize("HTML/AutoSalt_Summary_Metadata.html")));
+            $this->setOpenExportedPdfInNewTab(false); 
+		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Summary_Metadata.html",'r'),filesize("HTML/AutoSalt_Summary_Metadata.html")));
+            $this->setShowFormErrorsOnTop(true);
     
             return $result;
         }

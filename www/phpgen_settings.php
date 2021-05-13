@@ -22,9 +22,7 @@ function GetGlobalConnectionOptions()
 {  $config= include 'config.php';
 	
     return $config ;
- }
-
-
+}
 
 function HasAdminPage()
 {
