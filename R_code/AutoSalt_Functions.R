@@ -48,7 +48,7 @@ Column_Names= function(H,S){
 AutoSalt_Mixing=function(Discharge_Results) {
   Mixing_array=c()
   for(c in unique(Discharge_Results$CalEventID)){
-    Sub= Discharge_Results[which(Discharge_Results$CalEventID==c & Discharge_Results$Used=='Y'),]
+    Sub= Discharge_Results[which(Discharge_Results$CalEventID==c),]
     if (nrow(Sub) <2 | length(unique(Sub$SensorID))==1){
       Mixing_array=append(Mixing_array,NA)
       next()
