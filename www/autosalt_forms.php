@@ -49,7 +49,8 @@
                     new IntegerField('siteid', true),
                     new StringField('link', true),
                     new StringField('checked', true),
-                    new StringField('edits_made')
+                    new StringField('edits_made'),
+                    new StringField('notes')
                 )
             );
         }
@@ -87,7 +88,8 @@
                 new FilterColumn($this->dataset, 'siteid', 'siteid', 'SiteID'),
                 new FilterColumn($this->dataset, 'link', 'link', 'Link'),
                 new FilterColumn($this->dataset, 'checked', 'checked', 'Checked'),
-                new FilterColumn($this->dataset, 'edits_made', 'edits_made', 'Edits Made')
+                new FilterColumn($this->dataset, 'edits_made', 'edits_made', 'Edits Made'),
+                new FilterColumn($this->dataset, 'notes', 'notes', 'Notes')
             );
         }
     
@@ -99,7 +101,8 @@
                 ->addColumn($columns['siteid'])
                 ->addColumn($columns['link'])
                 ->addColumn($columns['checked'])
-                ->addColumn($columns['edits_made']);
+                ->addColumn($columns['edits_made'])
+                ->addColumn($columns['notes']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -217,6 +220,17 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -273,6 +287,14 @@
             //
             $column = new TextViewColumn('edits_made', 'edits_made', 'Edits Made', $this->dataset);
             $column->SetOrderable(true);
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
         }
     
@@ -340,6 +362,17 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -396,6 +429,15 @@
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
         }
     
         protected function AddInsertColumns(Grid $grid)
@@ -449,6 +491,15 @@
             $editor->addChoice('Y', 'Y');
             $editor->addChoice('N', 'N');
             $editColumn = new CustomEditColumn('Edits Made', 'edits_made', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -515,6 +566,14 @@
             $column = new TextViewColumn('edits_made', 'edits_made', 'Edits Made', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -572,6 +631,14 @@
             $column = new TextViewColumn('edits_made', 'edits_made', 'Edits Made', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -618,6 +685,14 @@
             //
             $column = new TextViewColumn('edits_made', 'edits_made', 'Edits Made', $this->dataset);
             $column->SetOrderable(true);
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
         }
     
@@ -707,7 +782,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
+		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
     
             return $result;
         }
