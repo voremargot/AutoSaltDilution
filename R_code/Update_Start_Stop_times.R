@@ -11,6 +11,8 @@ Rcode="/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/"
 
 
 library(DBI)
+library(curl)
+library(dplyr)
 source(sprintf("%s/AutoSalt_Functions.R",Rcode))
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
@@ -56,6 +58,7 @@ if (CNames=='EMPTY'){
   colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
   
   EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
+  DateTime <- strptime(paste(Event_to_edit$date, Event_to_edit$start_time),"%Y-%m-%d %H:%M:%S")
   EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
   DisSummaryComm='From Autodose event system'
   file.remove(EC_filename)
@@ -86,17 +89,21 @@ EC$TIMESTAMP <- strptime(EC$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
 EC$Sec <- c(1:nrow(EC))
 
 # Select only columns of EC to analyize (ECT if possible)
-Headers= Column_Names(EC,S)
+Headers= Column_Names(EC,SiteID)
 EC= select(EC, c('TIMESTAMP','Sec',Headers))
 
+Salt_wave_info=data.frame()
 Discharge_Results=data.frame()
 for (Sen in Sensors){
-  Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s [s]: ',Sen)))
-  End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s [s]: ',Sen)))
-  
+
   Query= sprintf("SELECT * FROM chrl.sensors WHERE SensorID=%i",Sen)
   SensorInfo <- dbGetQuery(con, Query)
   ProbeNum=SensorInfo$probe_number
+  
+  Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
+  End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+  
+  
   
   if (ProbeNum!=1){
     if (length(grep("THRECS_", Headers, ignore.case=T))>0){
@@ -118,6 +125,11 @@ for (Sen in Sensors){
     }
   } 
   
+  Timestamp_start= format(EC[EC$Sec==Start_time,'TIMESTAMP'],'%H:%M:%S')
+  Timestamp_end= format(EC[EC$Sec==End_time,'TIMESTAMP'],'%H:%M:%S')
+  SW= data.frame(Sensor= Sen, ProbeNum=ProbeNum, Start_time= Timestamp_start, End_time= Timestamp_end, StartEC=EC[EC$Sec==Start_time, Headers[Header_Use]], 
+                 EndEC=EC[EC$Sec==End_time, Headers[Header_Use]], ST=Start_time, ET=End_time)
+  Salt_wave_info= rbind(Salt_wave_info,SW)
   subset= EC[which(EC$Sec> Start_time & EC$Sec<End_time),Headers[Header_Use]]
   
   ECb <- mean(subset[1],subset[length(subset)])
@@ -126,7 +138,7 @@ for (Sen in Sensors){
   
   # subset the EC data to values between the start and end of saltwave
   
-  CFID_subset= All_Dis[which(All_Dis$sensorid==Sen & All_Dis$used=='Y'),]
+  CFID_subset= All_Dis[which(All_Dis$sensorid==Sen),]
   for (CFID in CFID_subset$cfid){
     Query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalResultsID=%i",CFID)
     CalibrationInfo <- dbGetQuery(con, Query) 
@@ -147,7 +159,7 @@ for (Sen in Sensors){
     Dis <- (Salt_Vol/1000)/ sum(A,na.rm=TRUE)*deltaT
     DisUncer <- (sum(ER,na.rm=TRUE)/sum(A, na.rm=TRUE)*100)+Uncert_dump
     
-    DR <- data.frame(SiteID=SiteID, EventID=EventID, SensorID=Sen, CFID=CFID ,Discharge=Dis, Err=DisUncer, CalEventID=CalEventID )
+    DR <- data.frame(SiteID=SiteID, EventID=EventID, SensorID=Sen, CFID=CFID ,Discharge=Dis, Err=DisUncer, CalEventID=CalEventID,Used='Y' )
     Discharge_Results <- rbind(Discharge_Results,DR)
     
   }
@@ -167,10 +179,122 @@ TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_
 Mixing <- AutoSalt_Mixing(Discharge_Results)
 
 ##---------------------------------------------------
-##-----------Updating database-----------------------
+##-----------Updating stage results------------------
 ##---------------------------------------------------
 
+###############################
+# Download stage data for event
+###############################
+Stage_filename <- sprintf("Trials/%i_Stagedata.csv",SiteID)
+d <- curl_download(
+  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",SiteID,SiteID),Stage_filename)
+CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
+Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
+colnames(Stage) <- CNames
+
+Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
+
+###########################################
+# Extract and configure stage data for event
+############################################
+Stage_Subset <- Stage[(Stage$DoseEventID==EventID) & (Stage$TIMESTAMP< EC[nrow(EC),"TIMESTAMP"])&(Stage$TIMESTAMP> EC[1,"TIMESTAMP"]),]
+if(nrow(Stage_Subset)==0){
+  Stage_Subset <- data.frame(TIMESTAMP=rep(NA,100),PLS_Lvl=rep(NA,100),Sec=rep(NA,100))
+} else{
+  Diff_Time <- (EC$TIMESTAMP[1]-Stage_Subset$TIMESTAMP[1])[[1]]
+  
+  #align the seconds of stage values with the seconds from EC event 
+  Stage_Subset$Sec <- seq(from=abs(Diff_Time)+1,by=5,length.out=nrow(Stage_Subset))
+}
+Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
+Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
 
 
+######################
+# Summerize stage data
+######################
+Stage_Summary <- data.frame()
+for (R in c(1:nrow(Salt_wave_info))){
+  ST <- Salt_wave_info[R,'ST']
+  ET <- Salt_wave_info[R,'ET']
+  
+  if(is.na(Salt_wave_info[R,'Start_time'])==TRUE ){
+    Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
+  } else if  (ST > ET){
+    Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
+  } else {
+    Stage_Event <- Stage_Subset[Stage_Subset$Sec > ST & Stage_Subset$Sec < ET, ]
+  }
+  Stage_Average <- mean(Stage_Event$PLS_Lvl, na.rm=TRUE)
+  Stage_Min <- min(Stage_Event$PLS_Lvl,na.rm=TRUE)
+  Stage_Max <- max(Stage_Event$PLS_Lvl, na.rm=TRUE)
+  Stage_Std <- sd(Stage_Event$PLS_Lvl,na.rm=TRUE)
+  
+  
+  
+  if (is.nan(Stage_Average)==TRUE){
+    Starting_Stage <- NA
+    Ending_Stage <- NA
+    Stage_Dir <- NA
+    Stage_Average <- NA
+    Stage_Min <- NA
+    Stage_Max <- NA
+    Stage_Dir <- NA
+    
+    SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std)
+    Stage_Summary <- rbind(Stage_Summary,SS)
+    
+  } else{
+    SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std)
+    Stage_Summary <- rbind(Stage_Summary,SS)
+  }
+}
 
+
+Starting_Stage <- Stage_Subset[1,'PLS_Lvl']
+Ending_Stage <- Stage_Subset[nrow(Stage_Subset),'PLS_Lvl']
+
+
+# Determine how the stage is changing during the dump event
+if (is.na(Stage_Average)==FALSE){
+  if (length(Starting_Stage)==0 | length(Ending_Stage)==0){
+    Stage_Dir <- NA
+  } else if(Starting_Stage >(Ending_Stage+0.1)){
+    Stage_Dir <- 'F'
+  } else if (Starting_Stage < (Ending_Stage-0.1)){
+    Stage_Dir <- 'R'
+  } else {
+    Stage_Dir <- 'C'
+  }
+}
+
+##---------------------------------------------------------------------------
+##-------------------Updating Database---------------------------------------
+##---------------------------------------------------------------------------
+
+Query= sprintf("UPDATE chrl.autosalt_summary SET stage_average=%s, stage_min=%s, stage_max=%s, stage_std=%s, stage_dir='%s',
+               discharge_avg=%s, uncert=%s, mixing=%s WHERE eventid=%s AND siteid=%s",mean(Stage_Summary$StageAvg),mean(Stage_Summary$StageMin),
+               mean(Stage_Summary$StageMax),mean(Stage_Summary$StageStd),Stage_Dir,Average_Discharge,TotalUncert,Mixing,EventID,SiteID)
+Query <- gsub("\\n\\s+", " ", Query)
+Query <- gsub('NA',"NULL", Query)
+Query <- gsub("'NULL'","NULL",Query)
+dbSendQuery(con, Query)
+
+for (R in c(1:nrow(Discharge_Results))){
+  Query= sprintf('UPDATE chrl.all_discharge_calcs SET discharge=%s, uncertainty=%s WHERE eventid=%s AND siteid=%s AND sensorid=%s AND cfid=%s',
+                 Discharge_Results[R,'Discharge'],Discharge_Results[R,'Err'],EventID,SiteID,Discharge_Results[R,'SensorID'], Discharge_Results[R,'CFID'])
+  Query <- gsub("\\n\\s+", " ", Query)
+  Query <- gsub('NA',"NULL", Query)
+  Query <- gsub("'NULL'","NULL",Query)
+  dbSendQuery(con, Query)
+}
+
+for (R in c(1:nrow(Salt_wave_info))){
+  Query=sprintf("UPDATE chrl.salt_waves SET start_ecwave='%s',end_ecwave='%s',startingec=%s,endingec=%s WHERE eventid=%s AND siteid=%s AND sensorid=%s",Salt_wave_info[R,'Start_time'],
+                Salt_wave_info[R,'End_time'], Salt_wave_info[R,'StartEC'],Salt_wave_info[R,'EndEC'], EventID, SiteID,Salt_wave_info[R,'Sensor'])
+  Query <- gsub("\\n\\s+", " ", Query)
+  Query <- gsub('NA',"NULL", Query)
+  Query <- gsub("'NULL'","NULL",Query)
+  dbSendQuery(con, Query)
+}
 
