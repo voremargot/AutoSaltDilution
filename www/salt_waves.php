@@ -184,7 +184,7 @@
             $column = new NumberViewColumn('siteid', 'siteid', 'SiteID', $this->dataset);
             $column->SetOrderable(true);
             $column->setNumberAfterDecimal(0);
-            $column->setThousandsSeparator(',');
+            $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('FK- Autosalt Summary Table');
