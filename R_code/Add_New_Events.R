@@ -55,7 +55,7 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ## ---------------------------------------------------------------------------------------------
 
 # list of active stations
-Stations= c(1015)
+Stations= c(703)
 
 for (S in Stations){
   
@@ -82,7 +82,8 @@ for (S in Stations){
   Old_Events <- dbGetQuery(con, query)
   
   #New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
+  New_Events<- Dump_Event[Dump_Event$DoseEventID==879560101, ]
+  # New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
   # New_Events <- New_Events[20:nrow(New_Events),]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
   
@@ -95,7 +96,7 @@ for (S in Stations){
   # 
   # Number= sample(1:nrow(New_Events),1)
   
-  for (N in c(1:20)){#c(1:nrow(New_Events))){
+  for (N in c(1)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     #Keep track of how the code is running (will remove in final code)
@@ -193,6 +194,7 @@ for (S in Stations){
       
     } else {
       EC <- read.csv(EC_filename,skip=4, header=F,as.is=T)
+      EC
       colnames(EC)<- CNames[,1:ncol(CNames)]
       
       # If there is less than 2min of data in the EC file check the autodose file  
@@ -246,7 +248,17 @@ for (S in Stations){
     # Select only columns of EC to analyize (ECT if possible)
     Headers= Column_Names(EC,S)
     EC= select(EC, c('TIMESTAMP','Sec',Headers))
-      
+    
+    if (lapply(EC,class)[Headers[1]]=="character"){
+      for (H in c(1:length(Headers))){
+        HD= Headers[H]
+        EC <- transform(EC,TY= as.numeric(EC[,HD]))
+        EC[,HD]= EC[,'TY']
+      }
+    }
+    EC=EC[ , ! names(EC) %in% c('TY')]
+    
+    
   ## ----------------------------------------------------------------------------------------------------------------------------
   ## -----------------------------------------Calculating Start and Stop Times and exploring the EC data-------------------------
   ## ----------------------------------------------------------------------------------------------------------------------------
@@ -748,12 +760,13 @@ for (S in Stations){
     
     # Determine how the stage is changing during the dump event
     if (is.na(Stage_Average)==FALSE){
+      Diff= Stage_Start- mean(Stage_Summary$StageAvg, na.rm=TRUE)
       if (length(Starting_Stage)==0 | length(Ending_Stage)==0){
         Stage_Dir <- NA
-      } else if(Starting_Stage >(Ending_Stage+0.1)){
-        Stage_Dir <- 'F'
-      } else if (Starting_Stage < (Ending_Stage-0.1)){
+      } else if(Diff< (-0.5) ){
         Stage_Dir <- 'R'
+      } else if (Diff > 0.5){
+        Stage_Dir <- 'F'
       } else {
         Stage_Dir <- 'C'
       }
@@ -778,6 +791,8 @@ for (S in Stations){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Max_EC'],sheet= "EC salt waves",startRow = 8, startCol = 14, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Comment'],sheet= "EC salt waves",startRow = 8, startCol = 22, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Ecb'],sheet= "EC salt waves",startRow = 8, startCol = 24, header=F)
+        writeWorksheet(wb,sprintf('Sensor %s',EC_curve_results[EC_curve_results$Probe==W,'SensorID']),sheet= "EC salt waves",startRow = 4, startCol = 3, header=F)
+
       } else if (W==2){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_Time'],sheet= "EC salt waves",startRow = 6, startCol = 19, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_EC'],sheet= "EC salt waves",startRow = 6, startCol = 18, header=F)
@@ -787,6 +802,8 @@ for (S in Stations){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Max_EC'],sheet= "EC salt waves",startRow = 8, startCol = 18, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Comment'],sheet= "EC salt waves",startRow = 9, startCol = 22, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Ecb'],sheet= "EC salt waves",startRow = 9, startCol = 24, header=F)
+        writeWorksheet(wb,sprintf('Sensor %s',EC_curve_results[EC_curve_results$Probe==W,'SensorID']),sheet= "EC salt waves",startRow = 4, startCol = 4, header=F)
+        
       } else if (W==3){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_Time'],sheet= "EC salt waves",startRow =13, startCol = 15, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_EC'],sheet= "EC salt waves",startRow = 13, startCol = 14, header=F)
@@ -796,6 +813,9 @@ for (S in Stations){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Max_EC'],sheet= "EC salt waves",startRow = 15, startCol = 14, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Comment'],sheet= "EC salt waves",startRow = 10, startCol = 22, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Ecb'],sheet= "EC salt waves",startRow = 10, startCol = 24, header=F)
+        writeWorksheet(wb,sprintf('Sensor %s',EC_curve_results[EC_curve_results$Probe==W,'SensorID']),sheet= "EC salt waves",startRow = 4, startCol = 5, header=F)
+        
+
       } else if (W==4){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_Time'],sheet= "EC salt waves",startRow = 13, startCol = 19, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Starting_EC'],sheet= "EC salt waves",startRow = 13, startCol = 18, header=F)
@@ -805,6 +825,9 @@ for (S in Stations){
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Max_EC'],sheet= "EC salt waves",startRow = 15, startCol = 18, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Comment'],sheet= "EC salt waves",startRow = 11, startCol = 22, header=F)
         writeWorksheet(wb,EC_curve_results[EC_curve_results$Probe==W,'Ecb'],sheet= "EC salt waves",startRow = 11, startCol = 24, header=F)
+        writeWorksheet(wb,sprintf('Sensor %s',EC_curve_results[EC_curve_results$Probe==W,'SensorID']),sheet= "EC salt waves",startRow = 4, startCol = 6, header=F)
+        
+
       }
     }
    
