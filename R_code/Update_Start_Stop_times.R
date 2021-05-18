@@ -6,14 +6,10 @@
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
-setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Salt_Dilution/")
-Rcode="/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/"
-
-
 library(DBI)
 library(curl)
 library(dplyr)
-source(sprintf("%s/AutoSalt_Functions.R",Rcode))
+source("AutoSalt_Functions.R")
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
@@ -33,7 +29,7 @@ Salt_Vol= Event_to_edit$salt_volume
 ##-------------------------------------------
 #Downloading raw EC Data for event from Hakai
 ##-------------------------------------------
-EC_filename <- sprintf("Trials/%i_ECdata_%s.csv",SiteID,EventID)
+EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",SiteID,EventID)
 exists <- curl_fetch_disk(
   sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",SiteID,EventID),EC_filename)
 d <- curl_download(
@@ -49,7 +45,7 @@ CNames <- tryCatch({
 
 # If there is no data in the EC file, read in autodose file to see if event was captured
 if (CNames=='EMPTY'){
-  AutoDose_filename= sprintf("Trials/%i_ECAutoDose.csv",SiteID)
+  AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",SiteID)
   d <- curl_download(
     sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",SiteID,SiteID),AutoDose_filename)
   
@@ -70,7 +66,7 @@ if (CNames=='EMPTY'){
   
   # If there is less than 2min of data in the EC file check the autodose file  
   if (nrow(EC)<120){
-    AutoDose_filename= sprintf("Trials/%i_ECAutoDose.csv",SiteID)
+    AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",SiteID)
     d <- curl_download(
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",SiteID,SiteID),AutoDose_filename)
     CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
@@ -185,7 +181,7 @@ Mixing <- AutoSalt_Mixing(Discharge_Results)
 ###############################
 # Download stage data for event
 ###############################
-Stage_filename <- sprintf("Trials/%i_Stagedata.csv",SiteID)
+Stage_filename <- sprintf("working_directory/%i_Stagedata.csv",SiteID)
 d <- curl_download(
   sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",SiteID,SiteID),Stage_filename)
 CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
@@ -268,6 +264,9 @@ if (is.na(Stage_Average)==FALSE){
   }
 }
 
+file.remove(EC_filename)
+file.remove(AutoDose_filename)
+file.remove(Stage_filename)
 ##---------------------------------------------------------------------------
 ##-------------------Updating Database---------------------------------------
 ##---------------------------------------------------------------------------
