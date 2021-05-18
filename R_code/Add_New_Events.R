@@ -31,8 +31,8 @@ readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
 
-setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Salt_Dilution/")
-cwd= 'C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Salt_Dilution'
+# setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+
 
 #libraries
 library(curl)
@@ -42,7 +42,7 @@ library(XLConnect)
 library(dplyr)
 library(googledrive)
 library(tidyr)
-source("R_Scripts/MyFunctions.R")
+source("AutoSalt_Functions.R")
 
 options(warn = - 1)  
 
@@ -55,7 +55,7 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ## ---------------------------------------------------------------------------------------------
 
 # list of active stations
-Stations= c(703)
+Stations= c(1015)
 
 for (S in Stations){
   
@@ -63,7 +63,7 @@ for (S in Stations){
   # Finding new events for discharge calculation
   ###############################################
   
-  DumpEvent_File <-  sprintf("Trials/%i_DoesEvent.csv",S)
+  DumpEvent_File <-  sprintf("working_directory/%i_DoesEvent.csv",S)
   if (S==626){
     d <-  curl_download(
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S),DumpEvent_File)
@@ -82,7 +82,7 @@ for (S in Stations){
   Old_Events <- dbGetQuery(con, query)
   
   #New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[Dump_Event$DoseEventID==879560101, ]
+  New_Events<- Dump_Event[Dump_Event$DoseEventID==823022101, ]
   # New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
   # New_Events <- New_Events[20:nrow(New_Events),]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
@@ -162,7 +162,7 @@ for (S in Stations){
     ###################################
              
     #Downloading raw EC Data for event from Hakai
-    EC_filename <- sprintf("Trials/%i_ECdata_%s.csv",S,Event_Num)
+    EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
     exists <- curl_fetch_disk(
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
     d <- curl_download(
@@ -178,7 +178,7 @@ for (S in Stations){
     
     # If there is no data in the EC file, read in autodose file to see if event was captured
     if (CNames=='EMPTY'){
-      AutoDose_filename= sprintf("Trials/%i_ECAutoDose.csv",S)
+      AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
       d <- curl_download(
         sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
       
@@ -199,7 +199,7 @@ for (S in Stations){
       
       # If there is less than 2min of data in the EC file check the autodose file  
       if (nrow(EC)<120){
-        AutoDose_filename= sprintf("Trials/%i_ECAutoDose.csv",S)
+        AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
         d <- curl_download(
           sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
         CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
@@ -228,7 +228,7 @@ for (S in Stations){
     ###############################
     # Download stage data for event
     ###############################
-    Stage_filename <- sprintf("Trials/%i_Stagedata.csv",S)
+    Stage_filename <- sprintf("working_directory/%i_Stagedata.csv",S)
     d <- curl_download(
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S),Stage_filename)
     CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
@@ -779,7 +779,7 @@ for (S in Stations){
       ##--------------------------------------- Enter Data into Workbook------------------------------------------------------------------------
       ##----------------------------------------------------------------------------------------------------------------------------------------
       
-    wb <- loadWorkbook("Empty_form_NEW.xlsx")
+    wb <- loadWorkbook("Empty_autosalt_form.xlsx")
     
     for (W in  c(1:length(unique(EC_curve_results$Probe)))){
       if (W==1){
@@ -845,17 +845,17 @@ for (S in Stations){
     
     setForceFormulaRecalculation(wb,'Stage data',TRUE)
     
-    saveWorkbook(wb,sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
+    saveWorkbook(wb,sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     
     # # Upload excel sheet to google drive and save 
-    drive_upload(media=sprintf("Trials/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date))
-    autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
+    # drive_upload(media=sprintf("working_directory/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date))
+    # autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
 
     # Save google drive info for database
-    ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
-    # ASlink <-data.frame(EventID=Event_Num,SiteID=S,Link= NA,Checked='N')
+    # ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
+    ASlink <-data.frame(EventID=Event_Num,SiteID=S,Link= NA,Checked='N')
     Autosalt_forms <- rbind(Autosalt_forms,ASlink)
-    file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
+    # file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     
     ##-------------------------------------------------------------------------------------------------------------------------------------
     ##----------------------------------- Choosing CF Values for analysis -----------------------------------------------------------------
@@ -1014,7 +1014,7 @@ for (S in Stations){
     Discharge_Summary <- rbind(Discharge_Summary,DS)
     file.remove(EC_filename)
     file.remove(Stage_filename)
-    # file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
+    # file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     next()
   }
     
@@ -1105,7 +1105,7 @@ for (S in Stations){
     Discharge_Summary <- rbind(Discharge_Summary,DS)
     file.remove(EC_filename)
     file.remove(Stage_filename)
-    file.remove(sprintf("Trials/%s_%s_.xlsx",S,Event_Num))
+    file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     next()
   }
   
@@ -1155,7 +1155,7 @@ for (S in Stations){
     
     file.remove(EC_filename)
     file.remove(Stage_filename)
-    
+  
   }
   
   file.remove(DumpEvent_File)
@@ -1166,94 +1166,92 @@ for (S in Stations){
   ##-----------------------------------------------------------------------------------------------------------
 
 
-  #Autosalt Summary
-for (r in c(1:nrow(Discharge_Summary))){
-
-   Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
-           Discharge_Summary[r,"EventID"],
-           Discharge_Summary[r,"SiteID"],
-           Discharge_Summary[r,"PeriodID"],
-           Discharge_Summary[r,'Date'],
-           Discharge_Summary[r,"Temp"],
-           Discharge_Summary[r,"Start_Time"],
-           Discharge_Summary[r,"Stage_DoseRelease"],
-           Discharge_Summary[r,"Stage_Average"],
-           Discharge_Summary[r,"Stage_Min"],
-           Discharge_Summary[r,"Stage_Max"],
-           Discharge_Summary[r,"Stage_Std"],
-           Discharge_Summary[r,"Stage_Dir"],
-           Discharge_Summary[r,"Salt_Volume"],
-           Discharge_Summary[r,"Discharge_Avg"],
-           Discharge_Summary[r,"Uncert"],
-           Discharge_Summary[r,"Flags"],
-           Discharge_Summary[r,'ECb'],
-           Discharge_Summary[r,"Mixing"],
-           Discharge_Summary[r,"Notes"]
-           )
-
-   Query <- gsub("\\n\\s+", " ", Query)
-   Query <- gsub('NA',"NULL",Query)
-   Query <- gsub('NaN',"NULL",Query)
-   Query <- gsub("'NULL'","NULL",Query)
-   dbSendQuery(con, Query)
- }
-
- if (nrow(Salt_waves)>0){
-   for (r in c(1:nrow(Salt_waves))){
-     Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments)
-     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL)",
-                    Salt_waves[r,"SiteID"],
-                    Salt_waves[r,"EventID"],
-                    Salt_waves[r,"SensorID"],
-                    Salt_waves[r,"Start_ECwave"],
-                    Salt_waves[r,"End_ECwave"],
-                    Salt_waves[r,"Time_MaxEC"],
-                    Salt_waves[r,"StartingEC"],
-                    Salt_waves[r,"EndingEC"],
-                    Salt_waves[r,"PeakEC"],
-                    Salt_waves[r,"Flags"])
-     Query <- gsub("\\n\\s+", " ", Query)
-     Query <- gsub('NA',"NULL", Query)
-     Query <- gsub('NaN',"NULL",Query)
-     Query <- gsub("'NULL'","NULL",Query)
-
-     dbSendQuery(con, Query)
-   }
- }
-
- if (nrow(All_Discharge)>0){
-   for (r in c(1:nrow(All_Discharge))){
-     Query <- sprintf("INSERT INTO chrl.all_discharge_calcs (EventID, SiteID, SensorID,CFID, Discharge, Uncertainty,Used) VALUES (%s,%s,%s,%s,%s,%s,'%s')",
-                    All_Discharge[r,'EventID'],
-                    All_Discharge[r,"SiteID"],
-                    All_Discharge[r,"SensorID"],
-                    All_Discharge[r,"CFID"],
-                    All_Discharge[r,"Discharge"],
-                    All_Discharge[r,"Uncertainty"],
-                    All_Discharge[r,"Used"])
-     Query <- gsub("\\n\\s+", " ", Query)
-     Query <- gsub('NA',"NULL", Query)
-     Query <- gsub("'NULL'","NULL",Query)
-     dbSendQuery(con, Query)
-   }
- }
-
- if (nrow(Autosalt_forms)>0){
-   for (r in c(1:nrow(Autosalt_forms))){
-
-     Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL)",
-                    Autosalt_forms[r,"EventID"],
-                    Autosalt_forms[r,"SiteID"],
-                    Autosalt_forms[r,'Link'])
-     Query <- gsub("\\n\\s+", " ", Query)
-     Query <- gsub('NA',"NULL", Query)
-     Query <- gsub("'NULL'","NULL",Query)
-     Query <- gsub('NaN',"NULL",Query)
-     dbSendQuery(con, Query)
-   }
- }
-
- write.csv(Discharge_Summary, sprintf('Trials/New_Events_DischargeSum%s.csv',S))
+# # Autosalt Summary
+# for (r in c(1:nrow(Discharge_Summary))){
+# 
+#    Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
+#            Discharge_Summary[r,"EventID"],
+#            Discharge_Summary[r,"SiteID"],
+#            Discharge_Summary[r,"PeriodID"],
+#            Discharge_Summary[r,'Date'],
+#            Discharge_Summary[r,"Temp"],
+#            Discharge_Summary[r,"Start_Time"],
+#            Discharge_Summary[r,"Stage_DoseRelease"],
+#            Discharge_Summary[r,"Stage_Average"],
+#            Discharge_Summary[r,"Stage_Min"],
+#            Discharge_Summary[r,"Stage_Max"],
+#            Discharge_Summary[r,"Stage_Std"],
+#            Discharge_Summary[r,"Stage_Dir"],
+#            Discharge_Summary[r,"Salt_Volume"],
+#            Discharge_Summary[r,"Discharge_Avg"],
+#            Discharge_Summary[r,"Uncert"],
+#            Discharge_Summary[r,"Flags"],
+#            Discharge_Summary[r,'ECb'],
+#            Discharge_Summary[r,"Mixing"],
+#            Discharge_Summary[r,"Notes"]
+#            )
+# 
+#    Query <- gsub("\\n\\s+", " ", Query)
+#    Query <- gsub('NA',"NULL",Query)
+#    Query <- gsub('NaN',"NULL",Query)
+#    Query <- gsub("'NULL'","NULL",Query)
+#    dbSendQuery(con, Query)
+#  }
+# 
+#  if (nrow(Salt_waves)>0){
+#    for (r in c(1:nrow(Salt_waves))){
+#      Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments)
+#      VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL)",
+#                     Salt_waves[r,"SiteID"],
+#                     Salt_waves[r,"EventID"],
+#                     Salt_waves[r,"SensorID"],
+#                     Salt_waves[r,"Start_ECwave"],
+#                     Salt_waves[r,"End_ECwave"],
+#                     Salt_waves[r,"Time_MaxEC"],
+#                     Salt_waves[r,"StartingEC"],
+#                     Salt_waves[r,"EndingEC"],
+#                     Salt_waves[r,"PeakEC"],
+#                     Salt_waves[r,"Flags"])
+#      Query <- gsub("\\n\\s+", " ", Query)
+#      Query <- gsub('NA',"NULL", Query)
+#      Query <- gsub('NaN',"NULL",Query)
+#      Query <- gsub("'NULL'","NULL",Query)
+# 
+#      dbSendQuery(con, Query)
+#    }
+#  }
+# 
+#  if (nrow(All_Discharge)>0){
+#    for (r in c(1:nrow(All_Discharge))){
+#      Query <- sprintf("INSERT INTO chrl.all_discharge_calcs (EventID, SiteID, SensorID,CFID, Discharge, Uncertainty,Used) VALUES (%s,%s,%s,%s,%s,%s,'%s')",
+#                     All_Discharge[r,'EventID'],
+#                     All_Discharge[r,"SiteID"],
+#                     All_Discharge[r,"SensorID"],
+#                     All_Discharge[r,"CFID"],
+#                     All_Discharge[r,"Discharge"],
+#                     All_Discharge[r,"Uncertainty"],
+#                     All_Discharge[r,"Used"])
+#      Query <- gsub("\\n\\s+", " ", Query)
+#      Query <- gsub('NA',"NULL", Query)
+#      Query <- gsub("'NULL'","NULL",Query)
+#      dbSendQuery(con, Query)
+#    }
+#  }
+# 
+#  if (nrow(Autosalt_forms)>0){
+#    for (r in c(1:nrow(Autosalt_forms))){
+# 
+#      Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL)",
+#                     Autosalt_forms[r,"EventID"],
+#                     Autosalt_forms[r,"SiteID"],
+#                     Autosalt_forms[r,'Link'])
+#      Query <- gsub("\\n\\s+", " ", Query)
+#      Query <- gsub('NA',"NULL", Query)
+#      Query <- gsub("'NULL'","NULL",Query)
+#      Query <- gsub('NaN',"NULL",Query)
+#      dbSendQuery(con, Query)
+#    }
+#  }
 }
 
 options(warn = 0)
