@@ -262,6 +262,17 @@ CREATE TABLE chrl.RCManual(
 );
 ALTER SEQUENCE chrl.rcmanual_rcmanualid_seq RESTART WITH 279;
 
+CREATE TABLE chrl.GoogleDriveID
+(    DocID serial,
+     File_Name text NOT NULL,
+     DriveID text NOT NULL,
+     Date_Added  date NOT NULL,
+     CalEventID integer NOT NULL,
+     PRIMARY KEY (DocID)
+)
+ALTER SEQUENCE chrl.googledriveid_docid_seq RESTART WITH 418;
+
+
 
 #Creating Foreign Keys
 ALTER TABLE chrl.sensors ADD CONSTRAINT FKSiteID_Sensors FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON UPDATE CASCADE ON DELETE SET NULL;
@@ -292,3 +303,4 @@ ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKEvent_RCManual FOREIGN KEY(MDisID) RE
 ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKSiteID_RCManual FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKRC_RCManual FOREIGN KEY(RCID) REFERENCES chrl.rc_summary(RCID) ON DELETE CASCADE ON UPDATE CASCADE;
 
+ALTER TABLE chrl.googledriveid ADD CONSTRAINT FKCalEvent_googledrive FOREIGN KEY(CalEventID) REFERENCES chrl.calibration_events(caleventid) ON DELETE CASCADE ON UPDATE CASCADE;
