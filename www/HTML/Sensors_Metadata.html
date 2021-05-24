@@ -23,7 +23,7 @@
 <p style= "text-align: center; text-decoration:underline;font-size:20px">Data Constraints </p>
 1. The <strong>install date </strong> must occur before the <strong>deactivation date</strong>.<br>
 2. The <strong>sensor type</strong> and <strong>river loc</strong> can only be recorded as one of the accepted values. If different values need to be added, the data type will need to be changed within the database scheme.<br>
-3. When a sensor is replaced be sure to set the <strong> deactivation date </strong> from null to a valid date. Each probe number can only have one sensor with a null deactivation date to ensure consistency within the data. <br>
+3. When a sensor is replaced be sure to change the <strong> deactivation date </strong> from null to a valid date. Each probe number per site can have only one sensor with a null deactivation date to ensure consistency within the data. <br>
 
 <p style= "text-align: center; text-decoration:underline;font-size:20px">General Table Notes </p>
 The sensor record was not well documented prior to 2020 so the activation and deactivation dates are a best guess. When working with sensor data prior to 2020 you may find some inconsistencies between the sensors that were used for CF measurements and sensors used for discharge calculations. <br>
