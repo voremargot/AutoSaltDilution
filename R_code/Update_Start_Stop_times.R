@@ -172,7 +172,7 @@ Average_Discharge <- mean(Discharge_Results[,'Discharge'], na.rm=TRUE)
 TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))  
 
 # Determine the mixing
-Mixing <- AutoSalt_Mixing(Discharge_Results)
+Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),])
 
 ##---------------------------------------------------
 ##-----------Updating stage results------------------
@@ -265,7 +265,6 @@ if (is.na(Stage_Average)==FALSE){
 }
 
 file.remove(EC_filename)
-file.remove(AutoDose_filename)
 file.remove(Stage_filename)
 ##---------------------------------------------------------------------------
 ##-------------------Updating Database---------------------------------------
