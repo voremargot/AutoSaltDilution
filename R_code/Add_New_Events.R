@@ -55,8 +55,8 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ## ---------------------------------------------------------------------------------------------
 
 # list of active stations
-Stations= c(1015)
-
+Stations= c(626)
+Number_Event= 2
 for (S in Stations){
   
   ##############################################
@@ -81,8 +81,12 @@ for (S in Stations){
   query <- sprintf("SELECT EventID,SiteID FROM chrl.autosalt_summary WHERE SiteID=%i",S)
   Old_Events <- dbGetQuery(con, query)
   
+  query= sprintf('SELECT EventID,SiteID,SensorID FROM chrl.all_discharge_calcs WHERE CFID=1 AND SiteID=%s',S)
+  Events=dbGetQuery(con, query)
+  Events= unique(Events$eventid)
+  
   #New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[Dump_Event$DoseEventID==823022101, ]
+  New_Events<- Dump_Event[which(Dump_Event$DoseEventID==Events[Number_Event]), ]
   # New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
   # New_Events <- New_Events[20:nrow(New_Events),]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
@@ -97,7 +101,7 @@ for (S in Stations){
   # Number= sample(1:nrow(New_Events),1)
   
   for (N in c(1)){#c(1:nrow(New_Events))){
-    DisSummaryComm <- NA
+    DisSummaryComm <- 'Due to CF error, this result has been rerun since last RC'
     
     #Keep track of how the code is running (will remove in final code)
     print(sprintf('Station %i :Event %i of %i', S, N,nrow(New_Events)))
@@ -118,7 +122,8 @@ for (S in Stations){
     Date <- format(DateTime, format="%Y-%m-%d")
     
     # This is for testing only!! Remove in final code 
-    if (Date > format("2020-01-01", format="%Y-%m-%d")){
+    if (Date < format("2018-01-01", format="%Y-%m-%d")){
+      print('Event is too old to fix')
       next()
     }
     
@@ -542,7 +547,7 @@ for (S in Stations){
       ##Checking noise levels within saltwave
 
       # Checking for low EC values
-      if (mean(EC[,HED],na.rm=TRUE)<10){
+      if (mean(EC[,HED],na.rm=TRUE)<5){
         Comment <- append(Comment,'L') #Low EC values, may not be submerged
       }
       
@@ -1076,7 +1081,7 @@ for (S in Stations){
   Discharge_Results[!(Discharge_Results$Flag_count<2),'Used'] <- 'N'
   
   # Determine the mixing
-  Mixing <- AutoSalt_Mixing(Discharge_Results)
+  Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),])
 
   
   ##########################################
