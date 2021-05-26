@@ -907,7 +907,7 @@
             //
             $column = new NumberViewColumn('cf_value', 'cf_value', 'CF Value', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(4);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddPrintColumn($column);
@@ -917,7 +917,7 @@
             //
             $column = new NumberViewColumn('per_err', 'per_err', 'Per Err', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(3);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddPrintColumn($column);
