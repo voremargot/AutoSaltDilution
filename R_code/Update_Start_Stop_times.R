@@ -1,7 +1,27 @@
-## To change the starting and ending times of an EC waved used to calculate discharge
-## 1. Determine the new start and end times in seconds
-## 2. update these times in the google drive excel sheet containing the salt wave information
-## 3. Used the EC salt wave update code to do recalculations of discharge for the event
+##-----------------------------------------------------------------------------------------------
+# Created by: Margot Vore 
+# May 2021
+# 
+# This code is designed to recalculate the discharge of an event with hand-picked start and stop times 
+# for an EC wave. After adding a new event, it is expected that the user will look for any major errors 
+# in the salt curves and results. As there are many different types of salt curves the code that calculates
+# the discharge may have picked incorrect start and stop times. The user can then use this code to do 
+# recalculations with the start and stop times they have chosen by hand. This code will update the database
+# with the new discharge results. 
+#
+# This code enters data into the following database tables:
+# Autosalt_Summary
+# Salt_Waves
+# All_Discharge_Calc
+#
+#
+# Abbreviations:
+# EC --> Electrical Conductivity
+# CF  -->  Correction Factor
+
+##-----------------------------------------------------------------------------------------------
+## ---------------------------Setting up the work space------------------------------------------
+##-----------------------------------------------------------------------------------------------
 
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
@@ -13,22 +33,26 @@ source("AutoSalt_Functions.R")
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
-
+#Prompts to define what event you are altering
 EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
 SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
 
+##--------------------------------------------------------------------------------------------------
+##------------------------------ Extracting needed data from database and Hakai---------------------
+##--------------------------------------------------------------------------------------------------
+
+#Get info about the event
 Query <- sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
 Event_to_edit <- dbGetQuery(con, Query)
 
+#Get info about the sensors that are active during event
 Query <- sprintf("SELECT * FROM chrl.all_discharge_calcs WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
 All_Dis <- dbGetQuery(con, Query)
 Sensors <- unique(All_Dis$sensorid)
 
+#extract salt volume
 Salt_Vol= Event_to_edit$salt_volume
 
-##-------------------------------------------
-#Downloading raw EC Data for event from Hakai
-##-------------------------------------------
 EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",SiteID,EventID)
 exists <- curl_fetch_disk(
   sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",SiteID,EventID),EC_filename)
@@ -88,6 +112,11 @@ EC$Sec <- c(1:nrow(EC))
 Headers= Column_Names(EC,SiteID)
 EC= select(EC, c('TIMESTAMP','Sec',Headers))
 
+
+##-------------------------------------------------------------------------
+##------------------------- recalculate discharge--------------------------
+##-------------------------------------------------------------------------
+
 Salt_wave_info=data.frame()
 Discharge_Results=data.frame()
 for (Sen in Sensors){
@@ -126,11 +155,14 @@ for (Sen in Sensors){
   SW= data.frame(Sensor= Sen, ProbeNum=ProbeNum, Start_time= Timestamp_start, End_time= Timestamp_end, StartEC=EC[EC$Sec==Start_time, Headers[Header_Use]], 
                  EndEC=EC[EC$Sec==End_time, Headers[Header_Use]], ST=Start_time, ET=End_time)
   Salt_wave_info= rbind(Salt_wave_info,SW)
-  subset= EC[which(EC$Sec> Start_time & EC$Sec<End_time),Headers[Header_Use]]
+  subset= EC[which(EC$Sec>= Start_time & EC$Sec<=End_time),Headers[Header_Use]]
   
-  ECb <- mean(subset[1],subset[length(subset)])
+  ECb_start <- median(EC[which(EC$Sec < Start_time & EC$Sec > Start_time-30),Headers[Header_Use]], na.rm=TRUE)
+  ECb_end <- median(EC[which(EC$Sec > End_time & EC$Sec < End_time+30),Headers[Header_Use]], na.rm=TRUE)
   deltaT <- EC[2,'Sec']- EC[1,'Sec']
-  Uncert_dump <- (0.076/Salt_Vol)*100
+  Uncert_dump <- (0.0726/Salt_Vol)*100
+  
+  Delta_ECb= (ECb_start-ECb_end)/(length(subset)*deltaT)
   
   # subset the EC data to values between the start and end of saltwave
   
@@ -143,9 +175,11 @@ for (Sen in Sensors){
     Err= CalibrationInfo$per_err
     
     A <- array(); ER <- array()
+    cou=0
     for (E  in subset){
-      if (E >ECb){
-        C <- (E-ECb)*CF
+      cou=cou+deltaT
+      if (E >(ECb_start-(Delta_ECb*cou))){
+        C <- (E-(ECb_start-(Delta_ECb*cou)))*CF
         A <- append(A,C)
         ER <- append(ER, (((0.005/E)*100+ Err)/100*C))
       }
