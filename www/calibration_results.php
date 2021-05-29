@@ -246,7 +246,7 @@
             //
             $column = new NumberViewColumn('cf_value', 'cf_value', 'CF Value', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(4);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -259,7 +259,7 @@
             //
             $column = new NumberViewColumn('per_err', 'per_err', 'Per Err', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(3);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -1013,7 +1013,7 @@
             //
             $column = new NumberViewColumn('cf_value', 'cf_value', 'CF Value', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(4);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddExportColumn($column);
@@ -1023,7 +1023,7 @@
             //
             $column = new NumberViewColumn('per_err', 'per_err', 'Per Err', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(3);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddExportColumn($column);
@@ -1109,7 +1109,7 @@
             //
             $column = new NumberViewColumn('cf_value', 'cf_value', 'CF Value', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(4);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddCompareColumn($column);
@@ -1119,7 +1119,7 @@
             //
             $column = new NumberViewColumn('per_err', 'per_err', 'Per Err', $this->dataset);
             $column->SetOrderable(true);
-            $column->setNumberAfterDecimal(2);
+            $column->setNumberAfterDecimal(3);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $grid->AddCompareColumn($column);
@@ -1234,7 +1234,8 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Results_Metadata.html",'r'),filesize("HTML/Calibration_Results_Metadata.html")));
+ 	    $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Results_Metadata.html",'r'),filesize("HTML/Calibration_Results_Metadata.html")));
+    
     
             return $result;
         }
