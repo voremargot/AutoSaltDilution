@@ -1,10 +1,12 @@
-Column_Names= function(H,S){
+Column_Names= function(H){
   # Extracts the raw data columns that are temperature corrected 
   # from the datasets  (only temperature corrected data is used)
-  # in the analysis.
+  # in the analysis. 
+  # Inputs: dataframe with the EC data (H)
+  # Outputs: List of column headers that hold temperature corrected data
   
     
-  ProbeNum= c('e_EC','2_EC','3_EC')
+  ProbeNum= c('e_EC','2_EC','3_EC','4_EC')
   N=c()
   c=1
   for (i in ProbeNum){
@@ -46,6 +48,7 @@ Column_Names= function(H,S){
 ##---------------------------------------------------------------------------------
 
 AutoSalt_Mixing=function(Discharge_Results) {
+# This calculated the percent mixing of a salt dump event
   Mixing_array=c()
   for(c in unique(Discharge_Results$CalEventID)){
     Sub= Discharge_Results[which(Discharge_Results$CalEventID==c),]
