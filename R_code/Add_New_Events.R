@@ -244,7 +244,7 @@ for (S in Stations){
     EC$Sec <- c(1:nrow(EC))
     
     # Select only columns of EC to analyze (ECT if possible)
-    Headers= Column_Names(EC,S)
+    Headers= Column_Names(EC)
     EC= select(EC, c('TIMESTAMP','Sec',Headers))
     
     if (lapply(EC,class)[Headers[1]]=="character"){
