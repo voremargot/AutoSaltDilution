@@ -3,13 +3,13 @@
 # May 2021
 # 
 # This code is designed to calculate the discharge values from new autosalt dump events and enter 
-# the discharge values into the database. This code looks at the autosalt event log located in Hakai's
-# sensor network and picks out any new events that are not present in the database already. It then 
-# determines the staring and stopping point of each sensors salt wave as well as how usable the data is. 
-# It then creates a excel sheet which depicts the salt curves allowing the user to make changes as needed. This
-# excel sheet is uploaded automatically to google docs so it can easily be found. Next, we select the CF values 
-# that will be used for calcuating the CF values. Finally, a dicharge value is found for each CF value. 
-# All the results of this code are summerized and uploaded to their respective tables within the autosalt database. 
+# all corresponding data into the database. This code looks at the autosalt event log located in Hakai's
+# sensor network and picks out all events that are not already present in the database. It then 
+# determines the starting and stopping point of each sensor's salt wave as well as how usable the data is. 
+# It then creates a excel sheet which depicts the salt curves allowing the user to make changes as needed (this
+# excel sheet is uploaded automatically to google drive). Next, we select the CF values 
+# and calculate discharges and percent error of the dump event. All the results are then summarized and 
+# uploaded to their respective tables within the autosalt database. 
 #
 # This code enters data into the following database tables:
 # Autosalt_Summary
@@ -19,7 +19,7 @@
 #
 # Abbreviations:
 # EC --> Electrical Conductivity
-# CF  -->  Correction Factor
+# CF  --> Calibration Factor
 
 
 
@@ -31,7 +31,7 @@ options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
-#libraries
+# Libraries
 library(curl)
 library(DBI)
 library(data.table)
@@ -43,16 +43,16 @@ source("AutoSalt_Functions.R")
 
 options(warn = - 1)  
 
-#connect to database
+# Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-
+drive_auth(email=Sys.getenv('email_gdrive'))
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
 ## ---------------------------------------------------------------------------------------------
 
-# list of active stations
-Stations= c(1015)
+# List of active stations
+Stations= c(626,703,844,1015)
 for (S in Stations){
   
   ##############################################
@@ -68,12 +68,12 @@ for (S in Stations){
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S),DumpEvent_File)
   }
   
-  # reading in newly downloaded event file
+  # Reading in newly downloaded event file
   CNames <- read.csv(DumpEvent_File, skip = 1, header = F, nrows = 1,as.is=T)
   Dump_Event <- read.csv(DumpEvent_File,skip=4, header=F,as.is=T)
   colnames(Dump_Event) <- CNames
   
-  #Old Events--> those that have already be analyized 
+  # Old Events--> those that have already be analyzed 
   query <- sprintf("SELECT EventID,SiteID FROM chrl.autosalt_summary WHERE SiteID=%i",S)
   Old_Events <- dbGetQuery(con, query)
   
@@ -81,14 +81,12 @@ for (S in Stations){
   Events=dbGetQuery(con, query)
   Events= unique(Events$eventid)
   
-  #New Events --> those that have not yet been processed
-  # New_Events<- Dump_Event[which(Dump_Event$DoseEventID==873957901), ]
+  # New Events --> those that have not yet been processed
   New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
-  # New_Events <- New_Events[20:nrow(New_Events),]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
   
   
-  #Summary dataframe for the data that will be exported to CSV
+  #Summary data frames for the data that will be exported to CSV
   Discharge_Summary<-data.frame()
   All_Discharge <- data.frame()
   Salt_waves <-data.frame()
@@ -100,16 +98,13 @@ for (S in Stations){
   for (N in c(1:15)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
-    #Keep track of how the code is running (will remove in final code)
-    print(sprintf('Station %i :Event %i of %i', S, N,nrow(New_Events)))
-    
     
     ###################################  
     # Extracting metadata for the event
     ###################################
     Event_Num <- New_Events$DoseEventID[N]
     
-    #skip event if no event number is present 
+    # Skip event if no event number is present 
     if (is.na(Event_Num)==TRUE){
       next()
     }
@@ -125,10 +120,6 @@ for (S in Stations){
     DateTime <- strptime(New_Events$DoseReleaseTS[N], format="%m/%d/%Y %H:%M:%S")  
     Date <- format(DateTime, format="%Y-%m-%d")
     
-    # This is for testing only!! Remove in final code 
-    if (Date > format("2019-12-31", format="%Y-%m-%d")){
-      next()
-    }
     
     Time  <- format(DateTime, format="%H:%M:%S")
     Temp <- New_Events$StreamTemperatureRelease[N]
@@ -142,7 +133,7 @@ for (S in Stations){
     query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date >= '%s') AND (SiteID=%s)",Date,Date,S)
     Periods <- dbGetQuery(con, query)
     
-    # If end period is NA,  indicates the event happpened in the current barrel period
+    # If end period is NA,  indicates the event happened in the current barrel period
     if (nrow(Periods)==0){
       query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date IS NULL) AND (SiteID='%s')",Date,S)
       Periods <- dbGetQuery(con, query)
@@ -156,7 +147,7 @@ for (S in Stations){
     Period_ID <- as.numeric(Periods$periodid[1])
     
     #####################################################
-    # See how many CF have happenied in the barrel period
+    # See how many CF have happened in the barrel period
     query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
     Barrel_Period_CFs <- dbGetQuery(con, query)
     
@@ -169,7 +160,7 @@ for (S in Stations){
     # Downloading EC data for the event
     ###################################
              
-    #Downloading raw EC Data for event from Hakai
+    # Downloading raw EC Data for event from Hakai
     EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
     exists <- curl_fetch_disk(
       sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
@@ -249,10 +240,10 @@ for (S in Stations){
     EC$TIMESTAMP <- strptime(EC$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
     Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
     
-    #Add a column of seconds since start of event
+    # Add a column of seconds since start of event
     EC$Sec <- c(1:nrow(EC))
     
-    # Select only columns of EC to analyize (ECT if possible)
+    # Select only columns of EC to analyze (ECT if possible)
     Headers= Column_Names(EC,S)
     EC= select(EC, c('TIMESTAMP','Sec',Headers))
     
@@ -271,7 +262,7 @@ for (S in Stations){
   ## ----------------------------------------------------------------------------------------------------------------------------
       
     #############################################  
-    # Creating average EC columnn for each sensor
+    # Creating average EC column for each sensor
     #############################################
     for (EC_Cols in Headers){
       Smoothing_number<-15  #this value can be changed
@@ -282,25 +273,25 @@ for (S in Stations){
     
       
     ##################################
-    #Assessing salt waves of the event
+    # Assessing salt waves of the event
     ##################################
       
     EC_curve_results <- data.frame()
     Probe <- 1
       
-    #Calculate starting and ending time for the salt wave of each sensor
+    # Calculate starting and ending time for the salt wave of each sensor
     for (EC_Cols in Headers){
       Comment <- c()
       Ecb=NA
       HED <- sprintf('Avg_%s',EC_Cols)
       
-      #find maximum EC value
+      # Find maximum EC value
       Mx <- max(EC[,HED],na.rm=TRUE)
       # Find when maximum EC value occurred
       Time_Max <-  EC[(EC[,HED]==Mx)&(is.na(EC[,HED])==FALSE),"Sec"][1]
       
       
-      # Check for  multiple occurrances of maximum time
+      # Check for multiple occurrences of maximum time
       Splitting <- split(Time_Max, cumsum(c(1, diff(Time_Max) != 1)))
       L <- length(Splitting)
       if (L > 1 | length(Splitting$`1`)>10) {
@@ -317,7 +308,7 @@ for (S in Stations){
         next()
       }
       
-      #Determine if there is a significant slope to the starting base EC
+      # Determine if there is a significant slope to the starting base EC
       lin_model <- lm(filter(EC,Sec<30)[,HED]~Sec,filter(EC,Sec<30))
       slope <- summary(lin_model)$coefficients[2]*30
     
@@ -325,7 +316,7 @@ for (S in Stations){
       #################################
       # Find Starting Time of salt wave
       #################################
-      #if there is a significant slope in ECb --> choose minimum value in first 2.5min to be start of wave
+      # If there is a significant slope in ECb --> choose minimum value in first 2.5min to be start of wave
       if(abs(slope)>0.35){
         Starting_time <- EC[which(EC[,HED]==min(EC[EC$Sec<150,HED],na.rm=TRUE)& EC$Sec<150),'Sec'][1]
         Starting_EC <- EC[(EC$Sec==Starting_time),EC_Cols]
@@ -338,7 +329,7 @@ for (S in Stations){
         }
         
          
-        #check that the starting time doesn't exceed the max
+        # Check that the starting time doesn't exceed the max
         if (Starting_time > Time_Max){
           Starting_time <- EC[which(EC[,HED]==min(EC[EC$Sec<60,HED],na.rm=TRUE)& EC$Sec<60),'Sec'][1]
           Starting_EC <- EC[(EC$Sec==Starting_time),EC_Cols]
@@ -355,14 +346,14 @@ for (S in Stations){
           Starting_EC <- mean(EC[(EC$Sec<Averaging_time),HED],na.rm=TRUE)
           Starting_Std_avg <- sd(EC[(EC$Sec<Averaging_time),HED],na.rm=TRUE)
           
-          #Setting minimum standard deviations
+          # Setting minimum standard deviations
           if (Starting_Std_avg<0.050){
             Starting_Std_avg <- 0.050
           } 
           
           Starting_time <- EC[(EC[,HED]> (Starting_EC+3*Starting_Std_avg))&(is.na(EC[,HED])==FALSE),'Sec'][1]
           
-          #break point for the while loop
+          # Break point for the while loop
           if (Loop >= 1000){
             Starting_time <-  NA
           }
@@ -379,17 +370,17 @@ for (S in Stations){
           Starting_time <- 45
         }
         
-        #looks if EC values are exceptionally low; sensor may not be submerged
+        # Determines if EC values are exceptionally low; sensor may not be submerged
         if (mean(EC[,HED],na.rm=TRUE)<5){
           Comment <- append(Comment,'L') 
         }
         
-        #if there is no starting value then there is no wave
+        # If there is no starting value then there is no wave
         Comment <- append(Comment,'N')
         
         Comment <- paste(Comment, collapse=',')
         
-        # Add Event information to a data.frame
+        # Add Event information to a data frame
         Re <- data.frame(EventID=Event_Num, SiteID=S,Probe=Probe,Starting_EC=NA,Starting_Time=NA,Ending_EC= NA, Ending_Time=NA,
                           Time_Max= NA,Max_EC= NA,Duration=NA, STD=NA, Comment= Comment, Ecb=NA,Starting_ECb=NA, Ending_ECb=NA,stringsAsFactors = FALSE)
         EC_curve_results <- rbind(EC_curve_results,Re)
@@ -419,14 +410,14 @@ for (S in Stations){
         STD_multiplier <- STD_multiplier+1
         Stop_condition  <- NULL
         
-        #if there are not more than 21 rows, select the last datapoint as ending time 
+        # If there are not more than 21 rows, select the last datapoint as ending time 
         if (nrow(Ending_EC)<21){
           Ending_time <- Ending_EC[nrow(Ending_EC),'Sec']
           Stop_condition <- 'STOP'
           break
         }
         
-        #break point if the standard deviation gets too large (i.e.there is no curve or extreme Ecb change)
+        # Break point if the standard deviation gets too large (i.e. there is no curve or extreme Ecb change)
         if (STD_multiplier >70){
           Ending_time <- Ending_EC[(Starting_time+950),'Sec']
           Stop_condition <- 'STOP'
@@ -437,7 +428,7 @@ for (S in Stations){
           for (i in c(21:nrow(Ending_EC))){
             V <- mean(Ending_EC[((i-20):i),HED],na.rm=TRUE)
           
-            # check if the mean is within x standard deviations of the starting EC
+            # Check if the mean is within x standard deviations of the starting EC
             M=abs(Starting_EC-V)
             if (M <=(Starting_Std_avg*STD_multiplier)){
               Ending_time <- Ending_EC[i,'Sec']
@@ -449,7 +440,7 @@ for (S in Stations){
           }
         }
           
-        #Check if stopping conditions are met (indicated by CO of STOP) for the end point 
+        # Check if stopping conditions are met (indicated by CO of STOP) for the end point 
         if (is.null(Stop_condition)==TRUE){
           if (is.null(Ending_time)==TRUE){
             duration <- 2000
@@ -486,7 +477,7 @@ for (S in Stations){
       
     
       #####################################
-      #Checking for spikes in salt wave
+      # Checking for spikes in salt wave
       #####################################
       
       if(Starting_time > Ending_time | Ending_time< Starting_time+45){
@@ -496,10 +487,10 @@ for (S in Stations){
         
         count <- 0
         for (i in c(2:nrow(EC_saltwave))){
-          #check the difference between consecutive EC values
+          # Check the difference between consecutive EC values
           diff_EC <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i-1),EC_Cols]
           
-          #check to see if, after a large dip/jump in EC, it rebounds to previous levels
+          # Check to see if, after a large dip/jump in EC, it rebounds to previous levels
           if (abs(diff_EC) >4){
             for (j in c(1,2,3)){
               if ((i+j) > nrow(EC_saltwave)){
@@ -521,7 +512,7 @@ for (S in Stations){
             
           }
           
-          #break point to jump out of for loop 
+          # Break point to jump out of for loop 
           if (count==1){
             break
           }
@@ -533,7 +524,7 @@ for (S in Stations){
       # Additional flags for salt waves
       #################################
       
-      #Checking the noise levels in ECb
+      # Checking the noise levels in ECb
       if (Ending_time ==nrow(EC)){
         Ending_Std==0
       } else {
@@ -567,7 +558,6 @@ for (S in Stations){
         }
         
       }
-      ##Checking noise levels within saltwave
 
       # Checking for low EC values
       if (mean(EC[,HED],na.rm=TRUE)<5){
@@ -575,7 +565,7 @@ for (S in Stations){
       }
       
       ##################################
-      # Summerize the salt wave findings
+      # Summarize the salt wave findings
       ##################################
       
       E_EC <- EC[EC$Sec==Ending_time,EC_Cols]
@@ -684,7 +674,7 @@ for (S in Stations){
       ActiveSensor <- rbind(ActiveSensor,Act)
     }
     
-    # Assign sensor ID to saltwaves
+    # Assign sensor ID to salt waves
     for (C  in c(1:nrow(EC_curve_results))){
       PN <- EC_curve_results[C,'Probe']
       EC_curve_results[C,'SensorID'] <- ActiveSensor[ActiveSensor$probe_number==PN, 'sensorid'][1]
@@ -734,7 +724,7 @@ for (S in Stations){
     } else{
       Diff_Time <- (EC$TIMESTAMP[1]-Stage_Subset$TIMESTAMP[1])[[1]]
       
-      #align the seconds of stage values with the seconds from EC event 
+      # Align the seconds of stage values with the seconds from EC event 
       Stage_Subset$Sec <- seq(from=abs(Diff_Time)+1,by=5,length.out=nrow(Stage_Subset))
     }
     Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
@@ -742,7 +732,7 @@ for (S in Stations){
     
     
     ######################
-    # Summerize stage data
+    # Summarize  stage data
     ######################
     Stage_Summary <- data.frame()
     for (R in c(1:nrow(EC_curve_results))){
@@ -864,7 +854,7 @@ for (S in Stations){
     }
    
     
-    #Insert EC Data
+    # Insert EC Data
     writeWorksheet(wb,EC$TIMESTAMP,sheet= "EC salt waves",startRow = 6,startCol = 1, header=F)
     writeWorksheet(wb,EC$Sec,sheet= "EC salt waves",startRow = 6, startCol = 2, header=F)
     L <- length(unique(EC_curve_results$Probe))+2
@@ -879,7 +869,7 @@ for (S in Stations){
     
     saveWorkbook(wb,sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     
-    # # Upload excel sheet to google drive and save 
+    # Upload excel sheet to google drive and save 
     drive_upload(media=sprintf("working_directory/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date), overwrite=TRUE)
     autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
 
@@ -897,7 +887,7 @@ for (S in Stations){
     # Extract all calibration events during the events barrel period
     ################################################################
     
-    # calculate number of days betweeen event and CF measurement 
+    # Calculate number of days between event and CF measurement 
     Barrel_Period_CFs$Days_Diff <- abs(as.Date(Barrel_Period_CFs$date)-as.Date(Date))
     
     Barrel_Period_CFs <- arrange(Barrel_Period_CFs,Days_Diff)
@@ -913,14 +903,14 @@ for (S in Stations){
       Date_Cal <- Cal_to_use[Cal_to_use$caleventid==i,]$date[1]
       PMP <- Cal_to_use[Cal_to_use$caleventid==i,]$pmp[1]
         
-      # extract calibration results
+      # Extract calibration results
       query <- sprintf("SELECT * FROM chrl.calibration_results WHERE caleventid=%i",i)
       Cal_Result <- dbGetQuery(con, query)
       
       # Only use cal results that don't have flags
       Cal_Result  <- Cal_Result[is.na(Cal_Result$flags)==T | is.null(Cal_Result$flags)==T,]
       
-      # get all CF records associated with a particular ID
+      # Get all CF records associated with a particular ID
       for (Sensor_ID in unique(Cal_Result$sensorid)){
         
         query <- sprintf("SELECT * FROM chrl.sensors WHERE (sensorid=%i)",Sensor_ID)
@@ -938,7 +928,7 @@ for (S in Stations){
       }
     }
     
-    # if there are more than 6 CF values per sensor, subset CF values based on recency to event
+    # If there are more than 6 CF values per sensor, subset CF values based on recency to event
     Mi$DaysSince <- abs(Mi$Date-as.Date(Date,"%Y-%m-%d"))
     Mi= Mi[which(Mi$Sensor %in% ActiveSensor$sensorid),]
     for (x in ActiveSensor$sensorid){
@@ -984,7 +974,7 @@ for (S in Stations){
       End <- EC_curve_results[ EC_curve_results$Probe==Sen, 'Ending_Time']
       SID <- ActiveSensor[ActiveSensor$probe_number==Sen,'sensorid']
       
-      # if there is no Start time then we can not calculate discharge
+      # If there is no Start time then we cannot calculate discharge
       if(is.na(Start)==TRUE | (Start>End)){
         DR <- data.frame(SiteID=SiteID, EventID=Event_Num, SensorID=SID, CFID=NA, Discharge=NA, Err=NA, CalEventID=NA )
         Discharge_Results <- rbind(Discharge_Results,DR)
@@ -992,8 +982,7 @@ for (S in Stations){
       }
       
       
-      # values used in discahrge calculation equation
-      ECb <- mean(EC_curve_results[EC_curve_results$Probe==Sen, 'Starting_EC'],EC_curve_results[ EC_curve_results$Probe==Sen, 'Ending_EC'])
+      # Values used in discharge calculation equation
       deltaT <- EC[2,'Sec']- EC[1,'Sec']
       Uncert_dump <- (0.0726/Salt_Vol)*100
       
@@ -1005,7 +994,7 @@ for (S in Stations){
       Delta_ECb <- (ECb_start-ECb_end)/(length(EC_cut)*deltaT)
       
       ######################
-      # Calcuating Discharge
+      # Calculating Discharge
       ######################
       Mi_use <- Mi[which(Mi$Probe_Num==Sen),]
       if (nrow(Mi_use)==0){
@@ -1044,7 +1033,7 @@ for (S in Stations){
   
   Discharge_Results <- Discharge_Results[which(Discharge_Results$Discharge <100 & is.na(Discharge_Results$Discharge)==FALSE),]
   
-  # If there are no discharge results, summerize event for database and move to next event
+  # If there are no discharge results, summarize event for database and move to next event
   if (nrow(Discharge_Results)==0){
     DS <- data.frame(EventID=Event_Num, SiteID=S,PeriodID=Period_ID, Date= Date,
                    Temp= Temp,  Start_Time=Time, Stage_DoseRelease= Stage_Start,
@@ -1089,7 +1078,7 @@ for (S in Stations){
       D_Array <- append(D_Array,diff(as.numeric(Combo[,C])))
     }
     
-    # What to do if DisSummary is Null or not
+    # What to do if DisSummary is Null or NA
     if (sum(is.na(D_Array))<length(D_Array)){
       if (is.na(DisSummaryComm)==TRUE){
         if (abs(max(D_Array,na.rm=TRUE))> 35){
@@ -1105,7 +1094,7 @@ for (S in Stations){
   }
   
   
-  # Only summerize values if salt wave has less than 2 flags 
+  # Only summarize values if salt wave has less than 2 flags 
   Max_Q <- max(Discharge_Results[Discharge_Results$Flag_count <2, 'QP'],na.rm=TRUE)
   Min_Q <- min(Discharge_Results[Discharge_Results$Flag_count <2, 'QM'],na.rm=TRUE)
   
@@ -1203,12 +1192,9 @@ for (S in Stations){
   
   
   ##-----------------------------------------------------------------------------------------------------------
-  ##-------------------------------------------Enter data into databse------------------------------------------
+  ##-------------------------------------------Enter data into database------------------------------------------
   ##-----------------------------------------------------------------------------------------------------------
 
-
-
-# Autosalt Summary
 for (r in c(1:nrow(Discharge_Summary))){
 
    Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
@@ -1297,6 +1283,6 @@ for (r in c(1:nrow(Discharge_Summary))){
 }
 
 options(warn = 0)
-# dbDisconnect(con)
+dbDisconnect(con)
 
     
