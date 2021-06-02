@@ -1,3 +1,23 @@
+##-----------------------------------------------------------------------------------------------
+# Created by: Margot Vore 
+# May 2021
+# 
+# This code is used to pull out the data needed to create a rating curve. The code will create a 
+# CSV file that is compatible with the html code to create rating curve. This code does not update 
+# any tables.  Note that this CSV will be uploaded to the database after the rating curve has been made
+# using the "adding rating curve to database" script. 
+#
+#
+# Abbreviations:
+# EC --> Electrical Conductivity
+# CF  -->  Calibration Factor
+# RC --> Rating Curve
+
+
+
+##-----------------------------------------------------------------------------------------------
+## ---------------------------Setting up the workspace------------------------------------------
+##-----------------------------------------------------------------------------------------------
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
@@ -7,22 +27,30 @@ library(tidyverse)
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
-Site=626
-Rating_Curve_Version=5
+##---------------------------------------------------------------------------------------------
+##------------- Organizing autosalt data for CSV download-------------------------------------------
+##---------------------------------------------------------------------------------------------
+# Prompts for user to add in needed information
+Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
+Rating_Curve_Version=as.numeric(readline(prompt="The new rating curve's version number: "))
 
+# Pull all autosalt events where a discharge average exists
 query= sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%s",Site)
 autosalt_summary= dbGetQuery(con,query)
 autosalt_summary= autosalt_summary[is.na(autosalt_summary$discharge_avg)==FALSE,]
 
+
+# Get the RCID for the pervious RC version
 query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s AND Version=%s",Site, (Rating_Curve_Version-1))
 PreviousRC= dbGetQuery(con,query)
 RCID= PreviousRC$rcid
 EndDate= as.Date(PreviousRC$end_date)
 
+# Pull all autosalt events that were included in the previous RC version
 query=sprintf("SELECT * FROM chrl.rcautosalt WHERE SiteID=%s AND RCID=%s",Site,RCID)
 Autosalt_included= dbGetQuery(con,query)
 
-
+# Determine if an autosalt event was included in the previous RC or not
 for (r in c(1:nrow(autosalt_summary))){
   EventID= autosalt_summary[r,'eventid']
   Year=as.numeric(format(as.Date(autosalt_summary[r,'date']),'%Y'))
@@ -53,18 +81,20 @@ Final=autosalt_summary[,c('eventid','MID','siteid','Method','date','start_time',
                     'discharge_avg','uncert','mixing','ecb','notes')]
 
 
-##-------------------------------------------------------------------------------------
-##-------------------------Manual discharge--------------------------------------------
-##-------------------------------------------------------------------------------------
+##----------------------------------------------------------------------------------------------------------------------
+##------------------------- Orginize Manual discharge events for CSV download--------------------------------------------
+##-----------------------------------------------------------------------------------------------------------------------
 
+# List which manual events were included in the previous rating curve
 query=sprintf("SELECT * FROM chrl.rcmanual WHERE SiteID=%s AND RCID=%s",Site,RCID)
 Manual_included= dbGetQuery(con,query)
 
+# Pull all manual events where a discharge average exists
 query= sprintf("SELECT * FROM chrl.manual_discharge WHERE SiteID=%s",Site)
 manual_summary= dbGetQuery(con,query)
 manual_summary= manual_summary[is.na(manual_summary$discharge)==FALSE,]
 
-
+# Determine if a manual event was included in the previous rating curve or not
 for (r in c(1:nrow(manual_summary))){
   Year=as.numeric(format(as.Date(manual_summary[r,'date']),'%Y'))
   Month= as.numeric(format(as.Date(manual_summary[r,'date']),'%m'))
@@ -88,12 +118,14 @@ for (r in c(1:nrow(manual_summary))){
 manual_summary[manual_summary$date <= EndDate,'OldNew']='Old'
 manual_summary[manual_summary$date > EndDate,'OldNew']='New'
 
+# Create empty columns so we can combine manual and autosalt data
 manual_summary$eventid=NA
 manual_summary$stage_std=NA
 manual_summary$stage_dir=NA
 manual_summary$mixing= NA
 manual_summary$ecb=NA
 
+# Rename columns to match with the autosalt data
 manual_summary= manual_summary %>% 
       rename(MID=  mdisid) %>%
       rename(start_time = time)  %>%
@@ -102,9 +134,14 @@ manual_summary= manual_summary %>%
       rename(notes= comment) %>%
       rename( Method= method )
 
+
+##---------------------------------------------------------------------------------
+##------------------------ Create CSV-------------------------------------------------
+##------------------------------------------------------------------------------------
 Final= rbind(Final, manual_summary[,c('eventid','MID','siteid','Method','date','start_time','WY','OldNew','EventNumber','Included',
                                'stage_average','stage_std','stage_dir','discharge_avg','uncert','mixing','ecb','notes')])
 
+# Rename columns to match with the html code for creating rating curves
 Final = Final %>%
   rename(Old_New=OldNew) %>%
   rename(Event_no = EventNumber) %>%
@@ -121,5 +158,6 @@ Final = Final %>%
   rename(EventID= eventid) %>%
   rename(SiteID= siteid)
 
+# write the csv file to the local computer
 write.csv(Final, sprintf('working_directory/Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version), row.names = FALSE)
 
