@@ -3,45 +3,47 @@
 # May 2021
 # 
 # This code is designed to recalculate the discharge of an event with hand-picked start and stop times 
-# for an EC wave. After adding a new event, it is expected that the user will look for any major errors 
-# in the salt curves and results. As there are many different types of salt curves the code that calculates
-# the discharge may have picked incorrect start and stop times. The user can then use this code to do 
-# recalculations with the start and stop times they have chosen by hand. This code will update the database
-# with the new discharge results. 
+# for an EC wave. If the start and stop times of a salt wave look incorrectly placed,  the user can determine
+# new start and stop times which will be entered by following the prompts of this code. The code will then recalculate
+# the discharge and corresponding data and update the database and google drive document.
 #
 # This code enters data into the following database tables:
 # Autosalt_Summary
 # Salt_Waves
 # All_Discharge_Calc
-#
+# Autosalt_Forms
 #
 # Abbreviations:
 # EC --> Electrical Conductivity
-# CF  -->  Correction Factor
+# CF  -->  Calibration Factor
 
 ##-----------------------------------------------------------------------------------------------
-## ---------------------------Setting up the work space------------------------------------------
+## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 library(DBI)
 library(curl)
 library(dplyr)
+library(googledrive)
+library(XLConnect)
 source("AutoSalt_Functions.R")
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
+drive_auth(email=Sys.getenv('email_gdrive'))
 
-#Prompts to define what event you are altering
+# Prompts to define what event you are altering
 EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
 SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
 
 ##--------------------------------------------------------------------------------------------------
-##------------------------------ Extracting needed data from database and Hakai---------------------
+##------------------------------ Extracting data from database and Hakai---------------------------
 ##--------------------------------------------------------------------------------------------------
 
-#Get info about the event
+# Get info about the event
 Query <- sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
 Event_to_edit <- dbGetQuery(con, Query)
 
@@ -50,7 +52,7 @@ Query <- sprintf("SELECT * FROM chrl.all_discharge_calcs WHERE SiteID=%i AND Eve
 All_Dis <- dbGetQuery(con, Query)
 Sensors <- unique(All_Dis$sensorid)
 
-#extract salt volume
+# Extract salt volume
 Salt_Vol= Event_to_edit$salt_volume
 
 EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",SiteID,EventID)
@@ -105,16 +107,16 @@ if (CNames=='EMPTY'){
 
 EC$TIMESTAMP <- strptime(EC$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
 
-#Add a column of seconds since start of event
+# Add a column of seconds since start of event
 EC$Sec <- c(1:nrow(EC))
 
-# Select only columns of EC to analyize (ECT if possible)
-Headers= Column_Names(EC,SiteID)
+# Select only columns of EC to analyze (ECT if possible)
+Headers= Column_Names(EC)
 EC= select(EC, c('TIMESTAMP','Sec',Headers))
 
 
 ##-------------------------------------------------------------------------
-##------------------------- recalculate discharge--------------------------
+##------------------------- Recalculate discharge--------------------------
 ##-------------------------------------------------------------------------
 
 Salt_wave_info=data.frame()
@@ -164,7 +166,7 @@ for (Sen in Sensors){
   
   Delta_ECb= (ECb_start-ECb_end)/(length(subset)*deltaT)
   
-  # subset the EC data to values between the start and end of saltwave
+  # Subset the EC data to values between the start and end of salt wave
   
   CFID_subset= All_Dis[which(All_Dis$sensorid==Sen),]
   for (CFID in CFID_subset$cfid){
@@ -233,7 +235,7 @@ if(nrow(Stage_Subset)==0){
 } else{
   Diff_Time <- (EC$TIMESTAMP[1]-Stage_Subset$TIMESTAMP[1])[[1]]
   
-  #align the seconds of stage values with the seconds from EC event 
+  # Align the seconds of stage values with the seconds from EC event 
   Stage_Subset$Sec <- seq(from=abs(Diff_Time)+1,by=5,length.out=nrow(Stage_Subset))
 }
 Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
@@ -241,7 +243,7 @@ Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
 
 
 ######################
-# Summerize stage data
+# Summarize stage data
 ######################
 Stage_Summary <- data.frame()
 for (R in c(1:nrow(Salt_wave_info))){
@@ -329,4 +331,60 @@ for (R in c(1:nrow(Salt_wave_info))){
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
 }
+
+
+##-----------------------------------------------------------------------------
+##------------ Update Google Drive Sheet---------------------------------------
+##-----------------------------------------------------------------------------
+
+drive_download(file= sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path='working_directory/UpdateEvent.xlsx',overwrite = TRUE)
+wb= loadWorkbook("working_directory/UpdateEvent.xlsx")
+
+for (Probe in c(1,2,3,4)){
+  if (nrow(Salt_wave_info[Salt_wave_info$ProbeNum==Probe,])==0){
+    next()
+  }
+  Start_time= Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'ST']
+  End_time= Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'ET']
+  StartEC=Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'StartEC']
+  EndEC=Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'StartEC']
+  
+  if (Probe ==1) {
+    writeWorksheet(wb,Start_time,sheet= "EC salt waves",startRow = 6, startCol = 15, header=F)
+    writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 7, startCol = 15, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 6, startCol = 14, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 7, startCol = 14, header=F)
+  }  else if (Probe ==2) {
+    writeWorksheet(wb,Start_time,sheet= "EC salt waves",startRow = 6, startCol = 19, header=F)
+    writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 7, startCol = 19, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 6, startCol = 18, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 7, startCol = 18, header=F)
+  } else if (Probe ==3) {
+    writeWorksheet(wb,Start_time,sheet= "EC salt waves",startRow = 13, startCol = 15, header=F)
+    writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 14, startCol = 15, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 13, startCol = 16, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow =14, startCol = 16, header=F)
+  } else if (Probe ==4) {
+    writeWorksheet(wb,Start_time,sheet= "EC salt waves",startRow = 13, startCol = 19, header=F)
+    writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 14, startCol = 19, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 13, startCol = 18, header=F)
+    writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow =14, startCol = 18, header=F)
+  
+  }
+}
+
+setForceFormulaRecalculation(wb,'EC salt waves',TRUE)
+
+saveWorkbook(wb,sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
+drive_upload(media=sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date), overwrite=TRUE)
+file.remove(sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
+file.remove("working_directory/UpdateEvent.xlsx")
+
+autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date)),EventID,SiteID,Event_to_edit$date)
+Query=sprintf("UPDATE chrl.autosalt_forms SET link='%s' WHERE siteid=%s and EventID=%s",autosalt_file_link,SiteID, EventID)
+dbSendQuery(con,Query)
+
+
+
+
 
