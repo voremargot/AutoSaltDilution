@@ -1,3 +1,25 @@
+##-----------------------------------------------------------------------------------------------
+# Created by: Margot Vore 
+# May 2021
+# 
+# This code is used to record which discharge events have been included in a given rating curve. 
+# After the rating curve is created and the CSV file has been updated with all the relavent information about 
+# the curve, the CSV file  will be read into the database, documenting which events were included and the 
+# rain event number that was assigned to the event during the RC process.
+#
+# This code enters data into the following database tables:
+# RC autosalt
+# RC Manual
+#
+# Abbreviations:
+# EC --> Electrical Conductivity
+# CF  -->  Calibration Factor
+
+
+
+##-----------------------------------------------------------------------------------------------
+## ---------------------------Setting up the workspace------------------------------------------
+##-----------------------------------------------------------------------------------------------
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
@@ -7,15 +29,21 @@ library(tidyverse)
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
-RC= read.csv(sprintf('working_directory/Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version))
+##-------------------------------------------------------------------------------------------------
+##--------------------- Extracting relavent data from CSV file-------------------------------------
+##-------------------------------------------------------------------------------------------------
+Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
+Rating_Curve_Version=as.numeric(readline(prompt="The new rating curve's version number: "))
 
-Site=626
-Rating_Curve_Version=5
+RC= read.csv(sprintf('working_directory/Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version))
 
 query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s AND Version=%s",Site, (Rating_Curve_Version))
 Current_RC_version= dbGetQuery(con, query)
 RCID= Current_RC_version$rcid
 
+##-----------------------------------------------------------------------------------------------
+##------------------------Determining which autosalt events were included in  rating curve------
+##-----------------------------------------------------------------------------------------------
 RC_autosalt= RC[which(is.na(RC$EventID)==FALSE & RC$Final_rating_curve=='Y') ,]
 
 AS_DF= data.frame()
@@ -24,7 +52,9 @@ for (r in c(1:nrow(RC_autosalt))){
   AS_DF= rbind(AS_DF,A)
 }
 
-
+##-----------------------------------------------------------------------------------------------
+##------------------------Determining which manual events were included in  rating curve--------
+##-----------------------------------------------------------------------------------------------
 
 RC_manual= RC[which(is.na(RC$MID)==FALSE & RC$Final_rating_curve=='Y') ,]
 M_DF= data.frame()
@@ -34,6 +64,9 @@ for (r in c(1:nrow(RC_manual))){
 }
 
 
+##--------------------------------------------------------------------------------------------------------
+##------------- Insert data into the database--------------------------------------------------------------
+##---------------------------------------------------------------------------------------------------------
 
 for (r in c(1:nrow(AS_DF))){
   query= (sprintf('INSERT INTO chrl.rcautosalt (SiteID,EventID,RCID,EventNo) VALUES (%s,%s,%s,%s)',
