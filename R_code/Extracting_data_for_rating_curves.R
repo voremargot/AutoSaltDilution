@@ -18,8 +18,10 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
+# readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
+readRenviron('C:/Users/margo.DESKTOP-T66VM01/Desktop/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 library(DBI)
 library(curl)
