@@ -2,7 +2,7 @@
 # Created by: Margot Vore 
 # May 2021
 # 
-# This code is used to pull out the data needed to create a rating curve. The code will create a 
+# This code is used to pull out the data =needed to create a rating curve. The code will create a 
 # CSV file that is compatible with the html code to create rating curve. This code does not update 
 # any tables.  Note that this CSV will be uploaded to the database after the rating curve has been made
 # using the "adding rating curve to database" script. 
@@ -18,15 +18,15 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-# readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-readRenviron('C:/Users/margo.DESKTOP-T66VM01/Desktop/.Renviron')
+readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
-setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/working_directory")
 
 library(DBI)
 library(curl)
 library(tidyverse)
-
+library(RPostgres)
+ 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
 ##---------------------------------------------------------------------------------------------
@@ -34,19 +34,39 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ##---------------------------------------------------------------------------------------------
 # Prompts for user to add in needed information
 Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
-Rating_Curve_Version=as.numeric(readline(prompt="The new rating curve's version number: "))
+Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to  recreate : "))
+
+ver=0
+while (ver==0){
+  # Get the RCID for the RC user in interested in
+  query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s AND Version=%s",Site, (Rating_Curve_Version))
+  PreviousRC= dbGetQuery(con,query)
+  RCID= PreviousRC$rcid
+  
+  if (length(RCID)==0){
+    query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s",Site)
+    PreviousRC= dbGetQuery(con,query)
+    Valid_versions= PreviousRC$version
+    
+    
+    print('You have not entered a rating curve version number that exits')
+    print('Valid rating curve versions are:')
+    print(Valid_versions)
+    Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to  recreate : "))
+  } else {
+    ver=1
+  }
+}
+
+
+EndDate= as.Date(PreviousRC$end_date)
+
 
 # Pull all autosalt events where a discharge average exists
 query= sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%s",Site)
 autosalt_summary= dbGetQuery(con,query)
 autosalt_summary= autosalt_summary[is.na(autosalt_summary$discharge_avg)==FALSE,]
 
-
-# Get the RCID for the pervious RC version
-query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s AND Version=%s",Site, (Rating_Curve_Version-1))
-PreviousRC= dbGetQuery(con,query)
-RCID= PreviousRC$rcid
-EndDate= as.Date(PreviousRC$end_date)
 
 # Pull all autosalt events that were included in the previous RC version
 query=sprintf("SELECT * FROM chrl.rcautosalt WHERE SiteID=%s AND RCID=%s",Site,RCID)
@@ -161,5 +181,5 @@ Final = Final %>%
   rename(SiteID= siteid)
 
 # write the csv file to the local computer
-write.csv(Final, sprintf('working_directory/Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version), row.names = FALSE)
+write.csv(Final, sprintf('Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version), row.names = FALSE)
 
