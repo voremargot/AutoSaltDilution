@@ -205,8 +205,27 @@ for (S in Stations){
       
     # If there is still less than 2min of data, save the event in discharge summary and continue
     if (nrow(EC)< 120){
+      Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
+      CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
+      Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
+      colnames(Stage) <- CNames
+      Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
+      
+      Stage_Subset <- Stage[(Stage$DoseEventID==Event_Num),]
+      Stage_Subset$Sec <- c(1:nrow(Stage_Subset))
+      
+      Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
+      Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
+      
+      
+      Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+      Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+      Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+      Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+        
+      
       DS= data.frame(EventID=Event_Num, SiteID=S, PeriodID=Period_ID, Date= Date, Temp= Temp, Start_Time=Time, 
-                     Stage_DoseRelease= NA, Stage_Average= NA, Stage_Min= NA, Stage_Max= NA, Stage_Std= NA,
+                     Stage_DoseRelease= Stage_Start, Stage_Average= Stage_Average, Stage_Min= Stage_Min, Stage_Max= Stage_Max, Stage_Std= Stage_Std,
                      Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags='ND', ECb=NA,
                      Mixing= NA, Notes= NA)
       Discharge_Summary= rbind(Discharge_Summary,DS)
