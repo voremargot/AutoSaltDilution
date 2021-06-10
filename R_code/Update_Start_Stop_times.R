@@ -7,6 +7,9 @@
 # new start and stop times which will be entered by following the prompts of this code. The code will then recalculate
 # the discharge and corresponding data and update the database and google drive document.
 #
+# install.packages("XLConnect") --> To install this package properly you need to gave access to the cat.exe command which I had download via github.
+# The path to this cat.exe command was added as a PATH variable in my windows environment and it worked great. 
+#
 # This code enters data into the following database tables:
 # Autosalt_Summary
 # Salt_Waves
@@ -20,16 +23,11 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-# install.packages("XLConnect") --> To install this package properly you need to gave access to the cat.exe command which I had download via github.
-# The path to this cat.exe command was added as a PATH variable in my windows environment and it worked great. 
-
-
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 library(DBI)
-library(curl)
 library(dplyr)
 library(googledrive)
 library(XLConnect)
@@ -85,6 +83,7 @@ for (Sen in Sensors){
 
   Query= sprintf("SELECT * FROM chrl.sensors WHERE SensorID=%i",Sen)
   SensorInfo <- dbGetQuery(con, Query)
+  dbFetch(n=-1)
   ProbeNum=SensorInfo$probe_number
   
   Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
@@ -132,6 +131,8 @@ for (Sen in Sensors){
   for (CFID in CFID_subset$cfid){
     Query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalResultsID=%i",CFID)
     CalibrationInfo <- dbGetQuery(con, Query) 
+    dbFetch(n=-1)
+    
     CalEventID= CalibrationInfo$caleventid
     CF= CalibrationInfo$cf_value*10^-6
     Err= CalibrationInfo$per_err
@@ -252,6 +253,7 @@ Query <- gsub("\\n\\s+", " ", Query)
 Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
 dbSendQuery(con, Query)
+dbFetch(n=-1)
 
 for (R in c(1:nrow(Discharge_Results))){
   Query= sprintf('UPDATE chrl.all_discharge_calcs SET discharge=%s, uncertainty=%s WHERE eventid=%s AND siteid=%s AND sensorid=%s AND cfid=%s',
@@ -260,6 +262,7 @@ for (R in c(1:nrow(Discharge_Results))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
+  dbFetch(n=-1)
 }
 
 for (R in c(1:nrow(Salt_wave_info))){
@@ -269,6 +272,7 @@ for (R in c(1:nrow(Salt_wave_info))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
+  dbFetch(n=-1)
 }
 
 
@@ -320,6 +324,7 @@ file.remove("working_directory/Event_to_fix.xlsx")
 autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date)),EventID,SiteID,Event_to_edit$date)
 Query=sprintf("UPDATE chrl.autosalt_forms SET link='%s' WHERE siteid=%s and EventID=%s",autosalt_file_link,SiteID, EventID)
 dbSendQuery(con,Query)
+dbFetch(n=-1)
 
 
 
