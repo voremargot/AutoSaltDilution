@@ -95,7 +95,7 @@ for (S in Stations){
   # Number= sample(1:nrow(New_Events),1)
   
   EID_Array=c(0)
-  for (N in c(1:15)){#c(1:nrow(New_Events))){
+  for (N in c(1:5)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     
