@@ -26,16 +26,16 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
+readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
-setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+setwd("/home/autosalt/AutoSaltDilution/R_code")
 
-# Libraries
-library(curl)
+#Libraries
+
 library(DBI)
 library(data.table)
-library(XLConnect)
+#library(XLConnect)
 library(dplyr)
 library(googledrive)
 library(tidyr)
@@ -45,27 +45,24 @@ options(warn = - 1)
 
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(email=Sys.getenv('email_gdrive'))
+drive_auth_configure(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626,703,844,1015)
+Stations= c(626)
 for (S in Stations){
   
   ##############################################
   # Finding new events for discharge calculation
   ###############################################
-  
-  DumpEvent_File <-  sprintf("working_directory/%i_DoesEvent.csv",S)
+
   if (S==626){
-    d <-  curl_download(
-      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S),DumpEvent_File)
+    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
   } else {
-    d <- curl_download(
-      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S),DumpEvent_File)
+    DumpEvent_File < sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
   }
   
   # Reading in newly downloaded event file
@@ -95,7 +92,7 @@ for (S in Stations){
   # Number= sample(1:nrow(New_Events),1)
   
   EID_Array=c(0)
-  for (N in c(1:15)){#c(1:nrow(New_Events))){
+  for (N in c(1:3)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     
@@ -161,11 +158,10 @@ for (S in Stations){
     ###################################
              
     # Downloading raw EC Data for event from Hakai
-    EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
-    exists <- curl_fetch_disk(
-      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
-    d <- curl_download(
-        sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
+   # EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
+   # exists <- curl_fetch_disk(
+    #  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
+   EC_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num)
     
     
     # Determine if the EC file has data in it  
@@ -177,9 +173,8 @@ for (S in Stations){
     
     # If there is no data in the EC file, read in autodose file to see if event was captured
     if (CNames=='EMPTY'){
-      AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
-      d <- curl_download(
-        sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
+      #AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
+      AutoDose_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
       
       CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
       EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
@@ -188,7 +183,6 @@ for (S in Stations){
       EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
       DisSummaryComm='From Autodose event system'
-      file.remove(EC_filename)
       
       
     } else {
@@ -197,9 +191,7 @@ for (S in Stations){
       
       # If there is less than 2min of data in the EC file check the autodose file  
       if (nrow(EC)<120){
-        AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
-        d <- curl_download(
-          sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
+        AutoDose_filename <-  sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
         CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
         EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
         colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
@@ -217,8 +209,6 @@ for (S in Stations){
                      Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags='ND', ECb=NA,
                      Mixing= NA, Notes= NA)
       Discharge_Summary= rbind(Discharge_Summary,DS)
-      file.remove(AutoDose_filename)
-      file.remove(EC_filename)
       next()
     }
     
@@ -226,9 +216,7 @@ for (S in Stations){
     ###############################
     # Download stage data for event
     ###############################
-    Stage_filename <- sprintf("working_directory/%i_Stagedata.csv",S)
-    d <- curl_download(
-      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S),Stage_filename)
+    Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
     CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
     Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
     colnames(Stage) <- CNames
@@ -877,7 +865,7 @@ for (S in Stations){
     ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
     # ASlink <-data.frame(EventID=Event_Num,SiteID=S,Link= NA,Checked='N')
     Autosalt_forms <- rbind(Autosalt_forms,ASlink)
-    file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
+    file.remove(sprintf("working_directory/%s_%s.xlsx",S,Event_Num))
     
     ##-------------------------------------------------------------------------------------------------------------------------------------
     ##----------------------------------- Choosing CF Values for analysis -----------------------------------------------------------------
@@ -1042,9 +1030,6 @@ for (S in Stations){
                    Stage_Dir= Stage_Dir,Salt_Volume= Salt_Vol,Discharge_Avg=NA, Uncert=  NA,
                    Flags=DS_Flag,ECb=ECB_overall,Mixing=NA, Notes= DisSummaryComm)
     Discharge_Summary <- rbind(Discharge_Summary,DS)
-    file.remove(EC_filename)
-    file.remove(Stage_filename)
-    # file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     next()
   }
     
@@ -1133,9 +1118,6 @@ for (S in Stations){
                   Mixing=NA,
                   Notes= DisSummaryComm)
     Discharge_Summary <- rbind(Discharge_Summary,DS)
-    file.remove(EC_filename)
-    file.remove(Stage_filename)
-    file.remove(sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     next()
   }
   
@@ -1180,15 +1162,9 @@ for (S in Stations){
     
     Discharge_Summary <- rbind(Discharge_Summary,DS)
     All_Discharge <- rbind(All_Discharge,AD)
-
-  
-    
-    file.remove(EC_filename)
-    file.remove(Stage_filename)
   
   }
-  
-  file.remove(DumpEvent_File)
+
   
   
   ##-----------------------------------------------------------------------------------------------------------
