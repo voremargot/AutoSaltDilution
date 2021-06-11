@@ -47,6 +47,7 @@
                     new IntegerField('waveid', true, true, true),
                     new IntegerField('siteid', true),
                     new IntegerField('eventid', true),
+		    new DateField('event_date'),
                     new IntegerField('sensorid'),
                     new TimeField('start_ecwave'),
                     new TimeField('end_ecwave'),
@@ -55,7 +56,8 @@
                     new IntegerField('endingec'),
                     new IntegerField('peakec'),
                     new StringField('flags'),
-                    new StringField('comments')
+                    new StringField('comments'),
+                    
                 )
             );
             $this->dataset->AddLookupField('sensorid', 'chrl.sensors', new IntegerField('sensorid'), new IntegerField('sensorid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
@@ -92,6 +94,7 @@
                 new FilterColumn($this->dataset, 'waveid', 'waveid', 'WaveID'),
                 new FilterColumn($this->dataset, 'siteid', 'siteid', 'SiteID'),
                 new FilterColumn($this->dataset, 'eventid', 'eventid', 'EventID'),
+                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date'),
                 new FilterColumn($this->dataset, 'sensorid', 'LA1', 'SensorID'),
                 new FilterColumn($this->dataset, 'start_ecwave', 'start_ecwave', 'Start ECwave'),
                 new FilterColumn($this->dataset, 'end_ecwave', 'end_ecwave', 'End ECwave'),
@@ -101,6 +104,7 @@
                 new FilterColumn($this->dataset, 'peakec', 'peakec', 'PeakEC'),
                 new FilterColumn($this->dataset, 'flags', 'flags', 'Flags'),
                 new FilterColumn($this->dataset, 'comments', 'comments', 'Comments')
+                
             );
         }
     
@@ -184,7 +188,7 @@
             $column = new NumberViewColumn('siteid', 'siteid', 'SiteID', $this->dataset);
             $column->SetOrderable(true);
             $column->setNumberAfterDecimal(0);
-            $column->setThousandsSeparator('');
+            $column->setThousandsSeparator(',');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('FK- Autosalt Summary Table');
@@ -309,6 +313,17 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -420,6 +435,14 @@
             $column = new TextViewColumn('comments', 'comments', 'Comments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
             $grid->AddSingleRecordViewColumn($column);
         }
     
@@ -569,6 +592,17 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -692,6 +726,15 @@
             //
             $editor = new TextAreaEdit('comments_edit', 50, 8);
             $editColumn = new CustomEditColumn('Comments', 'comments', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -821,6 +864,15 @@
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -939,6 +991,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -1051,6 +1111,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -1153,6 +1221,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddCompareColumn($column);
         }
     
         private function AddCompareHeaderColumns(Grid $grid)
@@ -1241,7 +1317,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/Salt_Waves_Metadata.html",'r'),filesize("HTML/Salt_Waves_Metadata.html")));
+            $this->setDetailedDescription( fread(fopen("HTML/Salt_Waves_Metadata.html",'r'),filesize("HTML/Salt_Waves_Metadata.html")));
     
             return $result;
         }

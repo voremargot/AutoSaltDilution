@@ -7,6 +7,9 @@
 # new start and stop times which will be entered by following the prompts of this code. The code will then recalculate
 # the discharge and corresponding data and update the database and google drive document.
 #
+# install.packages("XLConnect") --> To install this package properly you need to gave access to the cat.exe command which I had download via github.
+# The path to this cat.exe command was added as a PATH variable in my windows environment and it worked great. 
+#
 # This code enters data into the following database tables:
 # Autosalt_Summary
 # Salt_Waves
@@ -20,13 +23,11 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 library(DBI)
-library(curl)
 library(dplyr)
 library(googledrive)
 library(XLConnect)
@@ -55,65 +56,22 @@ Sensors <- unique(All_Dis$sensorid)
 # Extract salt volume
 Salt_Vol= Event_to_edit$salt_volume
 
-EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",SiteID,EventID)
-exists <- curl_fetch_disk(
-  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",SiteID,EventID),EC_filename)
-d <- curl_download(
-  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",SiteID,EventID),EC_filename)
+drive_download(sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit[1,'date']),"working_directory/Event_to_fix.xlsx", overwrite = TRUE)
+wb= loadWorkbook("working_directory/Event_to_fix.xlsx")
 
+EC= readWorksheet(wb,'EC salt waves', header = FALSE, startRow = 6, startCol = 1, endCol = 6)
+num_data_cols=ncol(EC)-2
 
-# Determine if the EC file has data in it  
-CNames <- tryCatch({
-  read.csv(EC_filename, skip = 1, header = F, nrows = 1,as.is=T)
-}, error=function(cond) {
-  'EMPTY'
-})
-
-# If there is no data in the EC file, read in autodose file to see if event was captured
-if (CNames=='EMPTY'){
-  AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",SiteID)
-  d <- curl_download(
-    sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",SiteID,SiteID),AutoDose_filename)
-  
-  CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
-  EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
-  colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
-  
-  EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
-  DateTime <- strptime(paste(Event_to_edit$date, Event_to_edit$start_time),"%Y-%m-%d %H:%M:%S")
-  EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-  DisSummaryComm='From Autodose event system'
-  file.remove(EC_filename)
-  
-  
-} else {
-  EC <- read.csv(EC_filename,skip=4, header=F,as.is=T)
-  colnames(EC)<- CNames[,1:ncol(CNames)]
-  
-  # If there is less than 2min of data in the EC file check the autodose file  
-  if (nrow(EC)<120){
-    AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",SiteID)
-    d <- curl_download(
-      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",SiteID,SiteID),AutoDose_filename)
-    CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
-    EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
-    colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
-    
-    EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
-    EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-    DisSummaryComm='From Autodose event system'
-  }
+names(EC)[1]= 'TIMESTAMP'
+names(EC)[2]= 'Sec'
+Col=2
+for (p in c(1:num_data_cols)){
+  names(EC)[Col+p]= sprintf("EC%s",p)
 }
 
 EC$TIMESTAMP <- strptime(EC$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
-
-# Add a column of seconds since start of event
-EC$Sec <- c(1:nrow(EC))
-
-# Select only columns of EC to analyze (ECT if possible)
-Headers= Column_Names(EC)
-EC= select(EC, c('TIMESTAMP','Sec',Headers))
-
+Headers= c('EC1','EC2','EC3','EC4')
+Headers=Headers[1:num_data_cols]
 
 ##-------------------------------------------------------------------------
 ##------------------------- Recalculate discharge--------------------------
@@ -125,6 +83,7 @@ for (Sen in Sensors){
 
   Query= sprintf("SELECT * FROM chrl.sensors WHERE SensorID=%i",Sen)
   SensorInfo <- dbGetQuery(con, Query)
+  dbFetch(n=-1)
   ProbeNum=SensorInfo$probe_number
   
   Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
@@ -172,6 +131,8 @@ for (Sen in Sensors){
   for (CFID in CFID_subset$cfid){
     Query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalResultsID=%i",CFID)
     CalibrationInfo <- dbGetQuery(con, Query) 
+    dbFetch(n=-1)
+    
     CalEventID= CalibrationInfo$caleventid
     CF= CalibrationInfo$cf_value*10^-6
     Err= CalibrationInfo$per_err
@@ -217,29 +178,10 @@ Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),]
 ###############################
 # Download stage data for event
 ###############################
-Stage_filename <- sprintf("working_directory/%i_Stagedata.csv",SiteID)
-d <- curl_download(
-  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",SiteID,SiteID),Stage_filename)
-CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
-Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
-colnames(Stage) <- CNames
-
-Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
-
-###########################################
-# Extract and configure stage data for event
-############################################
-Stage_Subset <- Stage[(Stage$DoseEventID==EventID) & (Stage$TIMESTAMP< EC[nrow(EC),"TIMESTAMP"])&(Stage$TIMESTAMP> EC[1,"TIMESTAMP"]),]
-if(nrow(Stage_Subset)==0){
-  Stage_Subset <- data.frame(TIMESTAMP=rep(NA,100),PLS_Lvl=rep(NA,100),Sec=rep(NA,100))
-} else{
-  Diff_Time <- (EC$TIMESTAMP[1]-Stage_Subset$TIMESTAMP[1])[[1]]
-  
-  # Align the seconds of stage values with the seconds from EC event 
-  Stage_Subset$Sec <- seq(from=abs(Diff_Time)+1,by=5,length.out=nrow(Stage_Subset))
-}
-Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
-Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
+Stage= readWorksheet(wb,'Stage data',startRow = 6, startCol = 2, endCol = 4, header = FALSE)
+names(Stage)[1]= 'TIMESTAMP'
+names(Stage)[2]='Sec'
+names(Stage)[3]= 'PLS_Lvl'
 
 
 ######################
@@ -251,11 +193,11 @@ for (R in c(1:nrow(Salt_wave_info))){
   ET <- Salt_wave_info[R,'ET']
   
   if(is.na(Salt_wave_info[R,'Start_time'])==TRUE ){
-    Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
+    Stage_Event <- Stage[Stage$Sec > 1 & Stage$Sec < 1000, ]
   } else if  (ST > ET){
-    Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
+    Stage_Event <- Stage[Stage$Sec > 1 & Stage$Sec < 1000, ]
   } else {
-    Stage_Event <- Stage_Subset[Stage_Subset$Sec > ST & Stage_Subset$Sec < ET, ]
+    Stage_Event <- Stage[Stage$Sec > ST & Stage$Sec < ET, ]
   }
   Stage_Average <- mean(Stage_Event$PLS_Lvl, na.rm=TRUE)
   Stage_Min <- min(Stage_Event$PLS_Lvl,na.rm=TRUE)
@@ -283,8 +225,8 @@ for (R in c(1:nrow(Salt_wave_info))){
 }
 
 
-Starting_Stage <- Stage_Subset[1,'PLS_Lvl']
-Ending_Stage <- Stage_Subset[nrow(Stage_Subset),'PLS_Lvl']
+Starting_Stage <- Stage[1,'PLS_Lvl']
+Ending_Stage <- Stage[nrow(Stage),'PLS_Lvl']
 
 
 # Determine how the stage is changing during the dump event
@@ -300,8 +242,6 @@ if (is.na(Stage_Average)==FALSE){
   }
 }
 
-file.remove(EC_filename)
-file.remove(Stage_filename)
 ##---------------------------------------------------------------------------
 ##-------------------Updating Database---------------------------------------
 ##---------------------------------------------------------------------------
@@ -313,6 +253,7 @@ Query <- gsub("\\n\\s+", " ", Query)
 Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
 dbSendQuery(con, Query)
+dbFetch(n=-1)
 
 for (R in c(1:nrow(Discharge_Results))){
   Query= sprintf('UPDATE chrl.all_discharge_calcs SET discharge=%s, uncertainty=%s WHERE eventid=%s AND siteid=%s AND sensorid=%s AND cfid=%s',
@@ -321,6 +262,7 @@ for (R in c(1:nrow(Discharge_Results))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
+  dbFetch(n=-1)
 }
 
 for (R in c(1:nrow(Salt_wave_info))){
@@ -330,6 +272,7 @@ for (R in c(1:nrow(Salt_wave_info))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
+  dbFetch(n=-1)
 }
 
 
@@ -337,8 +280,6 @@ for (R in c(1:nrow(Salt_wave_info))){
 ##------------ Update Google Drive Sheet---------------------------------------
 ##-----------------------------------------------------------------------------
 
-drive_download(file= sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path='working_directory/UpdateEvent.xlsx',overwrite = TRUE)
-wb= loadWorkbook("working_directory/UpdateEvent.xlsx")
 
 for (Probe in c(1,2,3,4)){
   if (nrow(Salt_wave_info[Salt_wave_info$ProbeNum==Probe,])==0){
@@ -348,7 +289,7 @@ for (Probe in c(1,2,3,4)){
   End_time= Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'ET']
   StartEC=Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'StartEC']
   EndEC=Salt_wave_info[which(Salt_wave_info$ProbeNum==Probe),'StartEC']
-  
+
   if (Probe ==1) {
     writeWorksheet(wb,Start_time,sheet= "EC salt waves",startRow = 6, startCol = 15, header=F)
     writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 7, startCol = 15, header=F)
@@ -369,7 +310,7 @@ for (Probe in c(1,2,3,4)){
     writeWorksheet(wb,End_time,sheet= "EC salt waves",startRow = 14, startCol = 19, header=F)
     writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow = 13, startCol = 18, header=F)
     writeWorksheet(wb,StartEC,sheet= "EC salt waves",startRow =14, startCol = 18, header=F)
-  
+
   }
 }
 
@@ -378,11 +319,12 @@ setForceFormulaRecalculation(wb,'EC salt waves',TRUE)
 saveWorkbook(wb,sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
 drive_upload(media=sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date), overwrite=TRUE)
 file.remove(sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
-file.remove("working_directory/UpdateEvent.xlsx")
+file.remove("working_directory/Event_to_fix.xlsx")
 
 autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date)),EventID,SiteID,Event_to_edit$date)
 Query=sprintf("UPDATE chrl.autosalt_forms SET link='%s' WHERE siteid=%s and EventID=%s",autosalt_file_link,SiteID, EventID)
 dbSendQuery(con,Query)
+dbFetch(n=-1)
 
 
 

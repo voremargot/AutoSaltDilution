@@ -47,10 +47,12 @@
                     new IntegerField('docid', true, true, true),
                     new IntegerField('eventid', true),
                     new IntegerField('siteid', true),
+                    new DateField('event_date'),
                     new StringField('link', true),
                     new StringField('checked', true),
                     new StringField('edits_made'),
                     new StringField('notes')
+                    
                 )
             );
         }
@@ -86,10 +88,12 @@
                 new FilterColumn($this->dataset, 'docid', 'docid', 'DocID'),
                 new FilterColumn($this->dataset, 'eventid', 'eventid', 'EventID'),
                 new FilterColumn($this->dataset, 'siteid', 'siteid', 'SiteID'),
+                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date'),
                 new FilterColumn($this->dataset, 'link', 'link', 'Link'),
                 new FilterColumn($this->dataset, 'checked', 'checked', 'Checked'),
                 new FilterColumn($this->dataset, 'edits_made', 'edits_made', 'Edits Made'),
                 new FilterColumn($this->dataset, 'notes', 'notes', 'Notes')
+                
             );
         }
     
@@ -102,7 +106,8 @@
                 ->addColumn($columns['link'])
                 ->addColumn($columns['checked'])
                 ->addColumn($columns['edits_made'])
-                ->addColumn($columns['notes']);
+                ->addColumn($columns['notes'])
+                ->addColumn($columns['event_date']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -231,6 +236,17 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -295,6 +311,14 @@
             $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
             $grid->AddSingleRecordViewColumn($column);
         }
     
@@ -373,6 +397,17 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -438,6 +473,15 @@
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
         }
     
         protected function AddInsertColumns(Grid $grid)
@@ -500,6 +544,15 @@
             //
             $editor = new TextAreaEdit('notes_edit', 50, 8);
             $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for event_date field
+            //
+            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -574,6 +627,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -639,6 +700,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -693,6 +762,14 @@
             $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for event_date field
+            //
+            $column = new DateTimeViewColumn('event_date', 'event_date', 'Event Date', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetDateTimeFormat('Y-m-d');
             $grid->AddCompareColumn($column);
         }
     
@@ -782,7 +859,8 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-		 $this->setDetailedDescription( fread(fopen(			   "HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
+	    $this->setDetailedDescription( fread(fopen("HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
+    
     
             return $result;
         }
