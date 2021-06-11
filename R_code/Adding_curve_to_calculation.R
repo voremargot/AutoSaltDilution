@@ -29,7 +29,6 @@ readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
 library(DBI)
-library(curl)
 library(dplyr)
 source("AutoSalt_Functions.R")
 
