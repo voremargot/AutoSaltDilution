@@ -700,7 +700,7 @@ for (S in Stations){
         w <- data.frame(SiteID=EC_curve_results[r,'SiteID'], EventID= EC_curve_results[r,'EventID'],
                      SensorID= EC_curve_results[r,'SensorID'],Start_ECwave= NA, End_ECwave=NA,
                      Time_MaxEC= NA, StartingEC=NA, EndingEC=NA,PeakEC=NA,
-                     Flags=EC_curve_results[r,'Comment'])
+                     Flags=EC_curve_results[r,'Comment'],Date=Date)
         sw <- rbind(sw,w)
       } else{
         w <- data.frame(SiteID=EC_curve_results[r,'SiteID'],
@@ -712,7 +712,8 @@ for (S in Stations){
                      StartingEC=EC_curve_results[r,'Starting_EC'],
                      EndingEC=EC_curve_results[r,'Ending_EC'],
                      PeakEC=EC_curve_results[r,'Max_EC'],
-                     Flags=EC_curve_results[r,'Comment'])
+                     Flags=EC_curve_results[r,'Comment'],
+		     Date=Date)
         sw <- rbind(sw,w)
       }
     }
@@ -882,7 +883,7 @@ for (S in Stations){
     autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
 
     # Save google drive info for database
-    ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N')
+    ASlink <- data.frame(EventID=Event_Num,SiteID=S,Link= autosalt_file_link,Checked='N',Date=Date)
     # ASlink <-data.frame(EventID=Event_Num,SiteID=S,Link= NA,Checked='N')
     Autosalt_forms <- rbind(Autosalt_forms,ASlink)
     file.remove(sprintf("working_directory/%s_%s.xlsx",S,Event_Num))
@@ -1224,8 +1225,8 @@ for (r in c(1:nrow(Discharge_Summary))){
 
  if (nrow(Salt_waves)>0){
    for (r in c(1:nrow(Salt_waves))){
-     Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments)
-     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL)",
+     Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments, Date_Event)
+     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL,%s)",
                     Salt_waves[r,"SiteID"],
                     Salt_waves[r,"EventID"],
                     Salt_waves[r,"SensorID"],
@@ -1235,7 +1236,8 @@ for (r in c(1:nrow(Discharge_Summary))){
                     Salt_waves[r,"StartingEC"],
                     Salt_waves[r,"EndingEC"],
                     Salt_waves[r,"PeakEC"],
-                    Salt_waves[r,"Flags"])
+                    Salt_waves[r,"Flags"],
+		    Salt_waves[r,'Date'])
      Query <- gsub("\\n\\s+", " ", Query)
      Query <- gsub('NA',"NULL", Query)
      Query <- gsub('NaN',"NULL",Query)
@@ -1265,10 +1267,11 @@ for (r in c(1:nrow(Discharge_Summary))){
  if (nrow(Autosalt_forms)>0){
    for (r in c(1:nrow(Autosalt_forms))){
 
-     Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL)",
+     Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL,%s)",
                     Autosalt_forms[r,"EventID"],
                     Autosalt_forms[r,"SiteID"],
-                    Autosalt_forms[r,'Link'])
+                    Autosalt_forms[r,'Link'],
+		    Autosalt_forms[r,'Date'])
      Query <- gsub("\\n\\s+", " ", Query)
      Query <- gsub('NA',"NULL", Query)
      Query <- gsub("'NULL'","NULL",Query)
