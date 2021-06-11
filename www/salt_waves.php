@@ -1275,7 +1275,7 @@
             ApplyCommonPageSettings($this, $result);
             
             $result->SetUseImagesForActions(true);
-            $defaultSortedColumns = array('waveid', 'siteid','eventid','event_date','sensorid','start_ecwave','end_ecwave','time_maxec','startingec','endingec', 'peakec','flags','comments');
+            $defaultSortedColumns = array();
             $defaultSortedColumns[] = new SortColumn('eventid', 'DESC');
             $result->setDefaultOrdering($defaultSortedColumns);
             $result->SetUseFixedHeader(false);
