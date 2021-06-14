@@ -540,7 +540,7 @@ for (S in Stations){
       }
       
       Starting_Std <- sd(EC[(EC$Sec<Starting_time),EC_Cols],na.rm=TRUE)
-      if(Starting_Std>0.8 | Ending_Std >0.8){
+      if(Starting_Std>0.6 | Ending_Std >0.6){
         Comment <- append(Comment, 'Sd') #Noisy with high Standard Deviation
       }
       
