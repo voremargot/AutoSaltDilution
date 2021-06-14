@@ -511,8 +511,8 @@ for (S in Stations){
                 count <-  1
                 break
               }
-              diff_try <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i+j),EC_Cols]
-              if (abs(diff_try)>4){
+              diff_try <- EC_saltwave[(i-1),EC_Cols]-EC_saltwave[(i-1+j),EC_Cols]
+              if (abs(diff_try)<4){
                 Comment <- append(Comment,'S') #Spike in the EC wave
                 count <-  1
                 break
@@ -541,7 +541,7 @@ for (S in Stations){
       }
       
       Starting_Std <- sd(EC[(EC$Sec<Starting_time),EC_Cols],na.rm=TRUE)
-      if(Starting_Std>0.8 | Ending_Std >0.8){
+      if(Starting_Std>0.6 | Ending_Std >0.6){
         Comment <- append(Comment, 'Sd') #Noisy with high Standard Deviation
       }
       

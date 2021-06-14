@@ -24,7 +24,6 @@ options(java.parameters <- c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
 library(googledrive)
 library(DBI)
-library(curl)
 library(openxlsx)
 library(lubridate)
 library(stringi)
@@ -42,6 +41,10 @@ Old_CF_Events <- dbGetQuery(con, query)
 Drive_Sheets <- drive_ls("AutoSalt_Hakai_Project/CF_Measurements")
 New_Events <- Drive_Sheets[!(Drive_Sheets$id %in% Old_CF_Events$driveid), ]
 
+if (nrow(New_Events)<1){
+  print('There are no new CF events to upload')
+  stop()
+}
 
 ##-----------------------------------------------------------------------------------------
 ##------------------ Transferring data to database-----------------------------------------
