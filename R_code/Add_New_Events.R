@@ -27,6 +27,8 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
+cat("\n")
+print(Sys.Date())
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
@@ -103,6 +105,7 @@ for (S in Stations){
     ###################################
     Event_Num <- New_Events$DoseEventID[N]
     
+    
     # Skip event if no event number is present 
     if (is.na(Event_Num)==TRUE){
       next()
@@ -119,6 +122,7 @@ for (S in Stations){
     DateTime <- strptime(New_Events$DoseReleaseTS[N], format="%m/%d/%Y %H:%M:%S")  
     Date <- format(DateTime, format="%Y-%m-%d")
     
+    print(sprintf('%s-%s',Event_Num,Date))
     
     Time  <- format(DateTime, format="%H:%M:%S")
     Temp <- New_Events$StreamTemperatureRelease[N]
@@ -151,7 +155,7 @@ for (S in Stations){
     Barrel_Period_CFs <- dbGetQuery(con, query)
     
     if (nrow(Barrel_Period_CFs)<4 & is.null(Periods$ending_date)==TRUE){
-      print(sprintf('Not enough CF measurements have been taken to evaluate Event %i at site %i',Event_Num,SiteID))
+      print(sprintf('Not enough CF measurements have been taken to evaluate Event %i at site %i:SKIPPING',Event_Num,SiteID))
       next()
     }
  
@@ -495,13 +499,13 @@ for (S in Stations){
         EC_saltwave <- EC[(EC$Sec>Starting_time)&(EC$Sec<Ending_time),]
         
         count <- 0
-        for (i in c(2:nrow(EC_saltwave))){
+        for (i in c(1:(nrow(EC_saltwave)-1))){
           # Check the difference between consecutive EC values
-          diff_EC <- EC_saltwave[i,EC_Cols]-EC_saltwave[(i-1),EC_Cols]
+          diff_EC <- EC_saltwave[i+1,EC_Cols]-EC_saltwave[(i),EC_Cols]
           
           # Check to see if, after a large dip/jump in EC, it rebounds to previous levels
-          if (abs(diff_EC) >4){
-            for (j in c(1,2,3)){
+          if (abs(diff_EC) >3){
+            for (j in c(1,2,3,4)){
               if ((i+j) > nrow(EC_saltwave)){
                 break
               }
@@ -511,8 +515,8 @@ for (S in Stations){
                 count <-  1
                 break
               }
-              diff_try <- EC_saltwave[(i-1),EC_Cols]-EC_saltwave[(i-1+j),EC_Cols]
-              if (abs(diff_try)<4){
+              diff_try <- EC_saltwave[(i),EC_Cols]-EC_saltwave[(i+j),EC_Cols]
+              if (abs(diff_try)<3){
                 Comment <- append(Comment,'S') #Spike in the EC wave
                 count <-  1
                 break
@@ -880,7 +884,7 @@ for (S in Stations){
     saveWorkbook(wb,sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     
     # Upload excel sheet to google drive and save 
-    drive_upload(media=sprintf("working_directory/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date), overwrite=TRUE)
+    drive_upload(media=sprintf("working_directory/%s_%s_.xlsx",S,Event_Num),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date), overwrite=TRUE,verbose = FALSE)
     autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',Event_Num,S,Date)),Event_Num,S,Date)
 
     # Save google drive info for database
@@ -1284,5 +1288,8 @@ for (r in c(1:nrow(Discharge_Summary))){
 
 options(warn = 0)
 dbDisconnect(con)
+
+print('---------------------------------------------------')
+print('---------------------------------------------------')
 
     
