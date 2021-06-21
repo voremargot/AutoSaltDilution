@@ -50,7 +50,8 @@
                     new DateField('date', true),
                     new StringField('pmp', true),
                     new IntegerField('trial', true),
-                    new StringField('location', true)
+                    new StringField('location', true),
+                    new IntegerField('temp')
                 )
             );
             $this->dataset->AddLookupField('periodid', 'chrl.barrel_periods', new IntegerField('periodid'), new IntegerField('periodid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
@@ -91,7 +92,8 @@
                 new FilterColumn($this->dataset, 'date', 'date', 'Date'),
                 new FilterColumn($this->dataset, 'pmp', 'pmp', 'PMP'),
                 new FilterColumn($this->dataset, 'trial', 'trial', 'Trial'),
-                new FilterColumn($this->dataset, 'location', 'location', 'Location')
+                new FilterColumn($this->dataset, 'location', 'location', 'Location'),
+                new FilterColumn($this->dataset, 'temp', 'temp', 'Temp')
             );
         }
     
@@ -104,7 +106,8 @@
                 ->addColumn($columns['date'])
                 ->addColumn($columns['pmp'])
                 ->addColumn($columns['trial'])
-                ->addColumn($columns['location']);
+                ->addColumn($columns['location'])
+                ->addColumn($columns['temp']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -230,6 +233,19 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for temp field
+            //
+            $column = new NumberViewColumn('temp', 'temp', 'Temp', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(2);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('.');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('degree C');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -291,6 +307,16 @@
             //
             $column = new TextViewColumn('location', 'location', 'Location', $this->dataset);
             $column->SetOrderable(true);
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for temp field
+            //
+            $column = new NumberViewColumn('temp', 'temp', 'Temp', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(2);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('.');
             $grid->AddSingleRecordViewColumn($column);
         }
     
@@ -414,6 +440,17 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for temp field
+            //
+            $editor = new TextEdit('temp_edit');
+            $editColumn = new CustomEditColumn('Temp', 'temp', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -522,6 +559,15 @@
             $editColumn = new CustomEditColumn('Location', 'location', $editor, $this->dataset);
             $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
             $editor->GetValidatorCollection()->AddValidator($validator);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for temp field
+            //
+            $editor = new TextEdit('temp_edit');
+            $editColumn = new CustomEditColumn('Temp', 'temp', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
         }
@@ -634,6 +680,15 @@
             $editor->GetValidatorCollection()->AddValidator($validator);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for temp field
+            //
+            $editor = new TextEdit('temp_edit');
+            $editColumn = new CustomEditColumn('Temp', 'temp', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -702,6 +757,16 @@
             $column = new TextViewColumn('location', 'location', 'Location', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for temp field
+            //
+            $column = new NumberViewColumn('temp', 'temp', 'Temp', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(2);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('.');
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -764,6 +829,16 @@
             $column = new TextViewColumn('location', 'location', 'Location', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for temp field
+            //
+            $column = new NumberViewColumn('temp', 'temp', 'Temp', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(2);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('.');
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -815,6 +890,16 @@
             //
             $column = new TextViewColumn('location', 'location', 'Location', $this->dataset);
             $column->SetOrderable(true);
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for temp field
+            //
+            $column = new NumberViewColumn('temp', 'temp', 'Temp', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(2);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('.');
             $grid->AddCompareColumn($column);
         }
     
@@ -904,7 +989,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Event_Metadata.html",'r'),filesize("HTML/Calibration_Event_Metadata.html")));
+            $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Event_Metadata.html",'r'),filesize("HTML/Calibration_Event_Metadata.html")));
     
             return $result;
         }
