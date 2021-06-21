@@ -38,7 +38,7 @@ setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 library(DBI)
 library(data.table)
-#library(XLConnect)
+library(XLConnect)
 library(dplyr)
 library(googledrive)
 library(tidyr)
@@ -153,12 +153,20 @@ for (S in Stations){
     # See how many CF have happened in the barrel period
     query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
     Barrel_Period_CFs <- dbGetQuery(con, query)
+    Barrel_Period_CFs=Barrel_Period_CFs[which(Barrel_Period_CFs$temp > (Temp-5) & Barrel_Period_CFs$temp <(Temp+5)),]
     
-    if (nrow(Barrel_Period_CFs)<4 & is.null(Periods$ending_date)==TRUE){
-      print(sprintf('Not enough CF measurements have been taken to evaluate Event %i at site %i:SKIPPING',Event_Num,SiteID))
+    Usable_trials= sum(Barrel_Period_CFs$trial)
+    if (Usable_trials < 4 & is.null(Periods$ending_date)==TRUE){
+      print(sprintf('Not enough valid CF measurements to evaluate Event %i at site %i:SKIPPING',Event_Num,SiteID))
       next()
     }
  
+    if (nrow(Barrel_Period_CFs)==0){
+      query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
+      Barrel_Period_CFs <- dbGetQuery(con, query)
+      DisSummaryComm='CF Values not chosen by temperature'
+      
+    }
     ###################################
     # Downloading EC data for the event
     ###################################
@@ -188,7 +196,12 @@ for (S in Stations){
       
       EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-      DisSummaryComm='From Autodose event system'
+      if (is.na(DisSummaryComm)==TRUE){
+        DisSummaryComm='From Autodose event system'
+      } else {
+        DisSummaryComm=append(DisSummaryComm,'From Autodose event system')
+        DisSummaryComm <- paste(DisSummaryComm, collapse=';')
+      }
       
       
     } else {
@@ -204,7 +217,12 @@ for (S in Stations){
         
         EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
         EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-        DisSummaryComm='From Autodose event system'
+        if (is.na(DisSummaryComm)==TRUE){
+          DisSummaryComm='From Autodose event system'
+        } else {
+          DisSummaryComm=append(DisSummaryComm,'From Autodose event system')
+          DisSummaryComm <- paste(DisSummaryComm, collapse=';')
+        }
       }
     }  
       
@@ -942,7 +960,7 @@ for (S in Stations){
       }
     }
     
-    # If there are more than 6 CF values per sensor, subset CF values based on recency to event
+    # If there are more than 6 CF values per sensor, subset CF values based on recencey to event
     Mi$DaysSince <- abs(Mi$Date-as.Date(Date,"%Y-%m-%d"))
     Mi= Mi[which(Mi$Sensor %in% ActiveSensor$sensorid),]
     for (x in ActiveSensor$sensorid){
