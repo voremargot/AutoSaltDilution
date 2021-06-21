@@ -36,26 +36,26 @@ setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 #Libraries
 
-library(DBI)
-library(data.table)
-library(XLConnect)
-library(dplyr)
-library(googledrive)
-library(tidyr)
+suppressMessages(library(DBI))
+suppressMessages(library(data.table))
+suppressMessages(library(XLConnect))
+suppressMessages(library(dplyr))
+suppressMessages(library(googledrive))
+suppressMessages(library(tidyr))
 source("AutoSalt_Functions.R")
 
 options(warn = - 1)  
 
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth_configure(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+drive_auth(token="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626)
+Stations= c(844)
 for (S in Stations){
   
   ##############################################
@@ -65,7 +65,7 @@ for (S in Stations){
   if (S==626){
     DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
   } else {
-    DumpEvent_File < sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
+    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
   }
   
   # Reading in newly downloaded event file
