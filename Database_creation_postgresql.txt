@@ -14,6 +14,7 @@ CREATE TABLE chrl.site_description(
     Active         chrl.YesNo  NOT NULL,
     Deactivation_Date DATE
 );
+
 ALTER TABLE chrl.site_description    
 ADD CONSTRAINT Needs_a_deactivation_date_as_site_is_not_active
 CHECK(NOT (Active='N' AND Deactivation_Date IS NULL));
@@ -99,7 +100,7 @@ CREATE UNIQUE INDEX Ending_date_can_only_be_null_once_per_site
 
 ALTER SEQUENCE chrl.barrel_periods_periodid_seq RESTART WITH 63;
 
-CREATE TYPE chrl.RiverL as ENUM('RR','RL','RR-L','RR-H','RL-L','RL-H','RC','Lab');
+CREATE TYPE chrl.RiverL as ENUM('RR','RL','RR-L','RR-H','RL-L','RL-H','RC','Lab','Other');
 CREATE TYPE chrl.SensorTypes as ENUM('WQ','THRECS','Fathom');
 CREATE TABLE chrl.sensors(
     SensorID  SERIAL PRIMARY KEY,
@@ -272,7 +273,93 @@ CREATE TABLE chrl.GoogleDriveID
 )
 ALTER SEQUENCE chrl.googledriveid_docid_seq RESTART WITH 418;
 
+CREATE TYPE chrl.DM_Yes_No AS ENUM('yes', 'no');
+CREATE TABLE chrl.Device_Magic
+(	DMID SERIAL,
+	Submitted TIMESTAMP,
+	Date_visit DATE,
+	Time_visit TIME,
+	SiteID SMALLINT,
+	Station_other TEXT,
+	Technician TEXT,
+	Technician_other TEXT, 
+	Upstream_Photo BYTEA,
+	Downstream_Photo BYTEA, 
+	Barrel_Fill chrl.DM_Yes_No,
+	CF_Event chrl.DM_Yes_No,
+	EC_Sensor_Change chrl.DM_Yes_No,
 
+	Recharge_time TIME,
+	Volume_Solution INT,
+	Salt_Added INT,
+	Water_Added INT,
+	Volume_depart INT,
+	Salt_remaining_site INT,
+	Barrel_Fill_Notes TEXT,
+
+	Time_Barrel_Period TEXT,
+	Trials_CF TEXT,
+	Stream_Temp TEXT,
+
+	Action TEXT,
+	Reason TEXT,
+	Sen_R_Removed_Type TEXT,
+	Sen_R_Removed_Type_Other TEXT,
+	Sen_R_Removed_SN TEXT,
+	Sen_R_Removed_ProbeNum TEXT,
+	Sen_R_New_Type TEXT,
+	Sen_R_New_Type_Other TEXT,
+	Sen_R_New_SN TEXT,
+	Sen_R_New_RivLoc TEXT,
+	Sen_R_New_RivLoc_Other TEXT,
+	Sen_R_New_ProbeNum TEXT,
+
+	Sen_Remove_Type TEXT,
+	Sen_Remove_Type_Other TEXT,
+	Sen_Remove_SN TEXT,
+	Sen_Remove_ProbeNum TEXT,
+
+	Sen_Add_Type TEXT,
+	Sen_Add_Type_Other TEXT,
+	Sen_Add_SN TEXT,
+	Sen_Add_RiverLoc TEXT,
+	Sen_Add_RiverLoc_Other TEXT,
+	Sen_Add_ProbeNum TEXT,
+
+	Sen_Sw_SN TEXT,
+	Sen_Sw_Position_Old TEXT,
+	Sen_Sw_Position_Old_Other TEXT,
+	Sen_Sw_Position_New TEXT,
+	Sen_Sw_Position_NEW_Other TEXT,
+	Sen_Sw_PN_Old TEXT,
+	Sen_Sw_PN_New TEXT,
+	
+	
+
+	Notes_Weather TEXT,
+	Notes_Repairs TEXT,
+	Notes_ToDo TEXT,
+	Notes_Other TEXT);
+
+CREATE TABLE chrl.Field_Visits
+(	FID 	SERIAL,
+	SiteID	SMALLINT,
+	Date	DATE,
+	Time	TIME,
+	Technicians TEXT,
+	Barrel_Fill chrl.yesno,
+	CF_Collection chrl.yesno,
+	Sensor_Change chrl.yesno,
+	Weather TEXT,
+	Repairs_Adjustments TEXT,
+	ToDo TEXT,
+	Other TEXT,
+	Upstream_Pic BYTEA,
+	Downstream_Pic BYTEA,
+	DMID TEXT)
+		
+
+	
 
 #Creating Foreign Keys
 ALTER TABLE chrl.sensors ADD CONSTRAINT FKSiteID_Sensors FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON UPDATE CASCADE ON DELETE SET NULL;
