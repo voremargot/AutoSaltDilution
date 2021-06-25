@@ -275,7 +275,7 @@ ALTER SEQUENCE chrl.googledriveid_docid_seq RESTART WITH 418;
 
 CREATE TYPE chrl.DM_Yes_No AS ENUM('yes', 'no');
 CREATE TABLE chrl.Device_Magic
-(	DMID SERIAL,
+(	DMID SERIAL PRIMARY KEY,
 	Submitted TIMESTAMP,
 	Date_visit DATE,
 	Time_visit TIME,
@@ -283,8 +283,8 @@ CREATE TABLE chrl.Device_Magic
 	Station_other TEXT,
 	Technician TEXT,
 	Technician_other TEXT, 
-	Upstream_Photo BYTEA,
-	Downstream_Photo BYTEA, 
+	Upstream_Photo TEXT,
+	Downstream_Photo TEXT, 
 	Barrel_Fill chrl.DM_Yes_No,
 	CF_Event chrl.DM_Yes_No,
 	EC_Sensor_Change chrl.DM_Yes_No,
@@ -339,10 +339,11 @@ CREATE TABLE chrl.Device_Magic
 	Notes_Weather TEXT,
 	Notes_Repairs TEXT,
 	Notes_ToDo TEXT,
-	Notes_Other TEXT);
+	Notes_Other TEXT,
+	Try TEXT);
 
 CREATE TABLE chrl.Field_Visits
-(	FID 	SERIAL,
+(	FID 	SERIAL  PRIMARY KEY,
 	SiteID	SMALLINT,
 	Date	DATE,
 	Time	TIME,
@@ -354,8 +355,8 @@ CREATE TABLE chrl.Field_Visits
 	Repairs_Adjustments TEXT,
 	ToDo TEXT,
 	Other TEXT,
-	Upstream_Pic BYTEA,
-	Downstream_Pic BYTEA,
+	Upstream_Pic TEXT,
+	Downstream_Pic TEXT,
 	DMID TEXT)
 		
 
@@ -391,3 +392,6 @@ ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKSiteID_RCManual FOREIGN KEY(SiteID) R
 ALTER TABLE chrl.rcmanual ADD CONSTRAINT FKRC_RCManual FOREIGN KEY(RCID) REFERENCES chrl.rc_summary(RCID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE chrl.googledriveid ADD CONSTRAINT FKCalEvent_googledrive FOREIGN KEY(CalEventID) REFERENCES chrl.calibration_events(caleventid) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE chrl.field_visits ADD CONSTRAINT FKSiteID_field FOREIGN KEY(SiteID) REFERENCES chrl.site_description(SiteID) ON UPDATE CASCADE ON DELETE SET NULL;
