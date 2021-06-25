@@ -1,17 +1,13 @@
 readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 
-setwd("Desktop")
-
 #Libraries
 
 library(DBI)
 library(data.table)
-library(XLConnect)
 library(dplyr)
-library(googledrive)
 library(tidyr)
-library(ggplot2)
+
 
 
 options(warn = - 1)  
@@ -21,8 +17,6 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 
 query= "SELECT * FROM chrl.Device_Magic WHERE new='Yes'"
 Field= dbGetQuery(con, query)
-Field[2,'siteid']=626
-Field[2,'date_visit']='2021-06-24'
 
 Visit_Dates= unique(Field$date_visit)
 
@@ -34,10 +28,25 @@ for (D in Visit_Dates){
   for (S in unique(Subset$siteid)){
     
     working= Subset[which(Subset$siteid==S),]
-    Time= min(format(as.POSIXct(working$time_visit,"%H:%M:%S"),'%H:%M:%S'))
-    Tech1= working[which(working$technician!='Other'),'technician']
-    Tech2= working[which(is.na(working$technician_other)==FALSE),'technician_other']
-    Technicians=paste(c(Tech1, Tech2),collapse = '; ')
+    Time= min(format(as.POSIXct(working$time_visit,"%H:%M:%S"),'%H:%M:%S'),na.rm = TRUE)
+    Techs=c()
+    for(x in nrow(working)){
+      Techs=append(Techs,unlist(strsplit(working[x,'technician'],',')))
+      Techs=append(Techs,unlist(strsplit(working[x,'technician_other'],',')))
+    }
+    Technicians=paste(unique(Techs[Techs!='Other']),collapse = '; ')
+    
+    
+    # if(any(grepl(', ', working$technician)==TRUE)){
+    #   entry= grep(', ', working$technician)
+    #   Ls= unlist(strsplit(working[entry,'technician'],','))
+    #   LS=c(Ls,unlist(working[!(entry),'technician']),unlist(strsplit(working[which(is.na(working$technician_other)==FALSE),'technician_other'],'; ')))
+    #   
+    # } else {
+    #   Tech1= unlist(strsplit(working[which(working$technician!='Other'),'technician'],'; '))
+    #   Tech2= unlist(strsplit(working[which(is.na(working$technician_other)==FALSE),'technician_other'],'; '))
+    # }
+
     
     if (any(working$barrel_fill=='yes')==TRUE){
       Barrel_Fill='Y'
@@ -57,10 +66,10 @@ for (D in Visit_Dates){
       SensorChange='N'
     }
     
-    Weather=paste(Working[which(is.na(Working$notes_weather)==FALSE),'notes_weather'],collapse = '; ')
-    Repairs= paste(Working[which(is.na(Working$notes_repairs)==FALSE),'notes_repairs'],collapse = '; ')
-    ToDo=paste(Working[which(is.na(Working$notes_todo)==FALSE),'notes_todo'],collapse = '; ')
-    Other=paste(Working[which(is.na(Working$notes_other)==FALSE),'notes_other'],collapse = '; ')
+    Weather=paste(working[which(is.na(working$notes_weather)==FALSE),'notes_weather'],collapse = '; ')
+    Repairs= paste(working[which(is.na(working$notes_repairs)==FALSE),'notes_repairs'],collapse = '; ')
+    ToDo=paste(working[which(is.na(working$notes_todo)==FALSE),'notes_todo'],collapse = '; ')
+    Other=paste(working[which(is.na(working$notes_other)==FALSE),'notes_other'],collapse = '; ')
     
     DMI= paste(working$dmid,collapse = '; ')
     
@@ -82,12 +91,20 @@ for (D in Visit_Dates){
         SensorChange='Y'
       }
       
-    
-      Weather= paste(unique(append(unlist(Weather),unlist(Old_wk$weather))), collapse = '; ')
-      Repairs= paste(unique(append(unlist(Repairs),unlist(Old_wk$repairs_adjustments))), collapse = '; ')
-      ToDo= paste(unique(append(unlist(ToDo),unlist(Old_wk$todo))), collapse = '; ')
-      Other=paste(unique(append(unlist(Other),unlist(Old_wk$other))), collapse = '; ')
-      DMI=paste(unique(append(unlist(DMI),unlist(Old_wk$dmid))), collapse = '; ')
+      if (is.null(Old_wk$weather)==FALSE){
+        Weather= paste(unique(append(unlist(strsplit(Weather, "; ")),unlist(strsplit(Old_wk$weather, "; ")))), collapse = '; ')
+      }
+      if (is.null(Old_wk$repairs_adjustments)==FALSE){
+        Repairs= paste(unique(append(unlist(strsplit(Repairs, "; ")),unlist(strsplit(Old_wk$repairs_adjustments, "; ")))), collapse = '; ')
+      }
+      if (is.null(Old_wk$todo)==FALSE){
+        ToDo= paste(unique(append(strsplit(unlist(ToDo, "; ")),unlist(strsplit(Old_wk$todo, "; ")))), collapse = '; ')
+      }
+      if (is.null(Old_wk$other)==FALSE){
+        Other=paste(unique(append(unlist(strsplit(Other, "; ")),unlist(strsplit(Old_wk$other, "; ")))), collapse = '; ')
+      }
+      
+      DMI=paste(unique(append(unlist(strsplit(DMI,'; ')),unlist(strsplit(Old_wk$dmid,'; ')))), collapse = '; ')
       
       if (Weather==""){
         Weather="NULL"
@@ -102,7 +119,7 @@ for (D in Visit_Dates){
         Other="NULL"
       }
       
-      query=sprintf("UPDATE TABLE chrl.field_visits SET
+      query=sprintf("UPDATE chrl.field_visits SET
                     date='%s', 
                     siteid=%s,
                     time='%s',
@@ -114,9 +131,13 @@ for (D in Visit_Dates){
                     repairs_adjustments='%s',
                     todo= '%s',
                     other='%s',
-                    dmid='%s',
+                    dmid='%s'
                     WHERE fid=%s",Date,S,Time,Technicians,Barrel_Fill,CF,SensorChange,
                     Weather, Repairs,ToDo,Other,DMI,ID)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
       dbSendQuery(con,query)
                     
       
@@ -138,13 +159,60 @@ for (D in Visit_Dates){
       query=sprintf("INSERT INTO chrl.field_visits (date,siteid,time,technicians,barrel_fill,cf_collection,sensor_change,weather,
               repairs_adjustments,todo,other,dmid) VALUES ('%s',%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
                     Date,S, Time, Technicians,  Barrel_Fill, CF, SensorChange,Weather, Repairs, ToDo, Other,DMI)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
       dbSendQuery(con,query)
       
     }
-
     
     query=sprintf("SELECT fid FROM chrl.field_visits WHERE date='%s' AND SiteID=%s",Date,S)
     New_Event= dbGetQuery(con,query)
+    
+    UP= working[which(is.na(working$upstream_photo)==FALSE),]
+    if (nrow(UP)!=0){
+      if (nrow(UP)==1){
+        dmid_UP= UP$dmid
+
+      } else if (nrow(UP) > 1){
+        sel= sample(c(1:nrow(UP)))[1]
+        dmid_UP=UP[sel,'dmid']
+      }
+
+      Q= sprintf("SELECT upstream_photo FROM chrl.device_magic WHERE dmid=%s",dmid_UP)
+      Link= sprintf("<a href=%s>Upstream_photo</a>",dbGetQuery(con,Q))
+      
+
+      query= sprintf("UPDATE chrl.field_visits SET upstream_pic='%s' WHERE fid=%s",Link,New_Event)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
+      dbSendQuery(con,query)
+
+    }
+
+
+    DOWN= working[which(is.na(working$downstream_photo)==FALSE),]
+    if (nrow(DOWN)!=0){
+      if (nrow(DOWN)==1){
+        dmid_DOWN= DOWN$dmid
+      } else if (nrow(DOWN) > 1){
+        sel= sample(c(1:nrow(DOWN)))[1]
+        dmid_DOWN=DOWN[sel,'dmid']
+      }
+      
+      Q= sprintf("SELECT downstream_photo FROM chrl.device_magic WHERE dmid=%s",dmid_DOWN)
+      Link= sprintf("<a href=%s>Downstream_photo</a>",dbGetQuery(con,Q))
+      
+      query= sprintf("UPDATE chrl.field_visits SET downstream_pic= '%s' WHERE fid=%s",Link,New_Event)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
+      dbSendQuery(con,query)
+    }
   }
 }
 
