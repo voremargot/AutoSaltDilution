@@ -19,9 +19,16 @@ require_once dirname(__FILE__) . '/' . 'database_engine/pgsql_engine.php';
 SystemUtils::SetTimeZoneIfNeed('America/Los_Angeles');
 
 function GetGlobalConnectionOptions()
-{  $config= include 'config.php';
-	
-    return $config ;
+{
+    return
+        array(
+          'server' => 'db.hakai.org',
+          'port' => '5432',
+          'username' => 'margot_vore',
+          'password' => '09rHXGVR',
+          'database' => 'hakaidev',
+          'client_encoding' => 'utf8'
+        );
 }
 
 function HasAdminPage()
@@ -52,6 +59,7 @@ function GetPageGroups()
     $result[] = array('caption' => 'Calibration Factors', 'description' => '');
     $result[] = array('caption' => 'Stream Discharge', 'description' => '');
     $result[] = array('caption' => 'Rating Curve', 'description' => '');
+    $result[] = array('caption' => 'Default', 'description' => '');
     return $result;
 }
 
@@ -68,9 +76,11 @@ function GetPageInfos()
     $result[] = array('caption' => 'RC Autosalt', 'short_caption' => 'RC Autosalt', 'filename' => 'rcautosalt.php', 'name' => 'chrl.rcautosalt', 'group_name' => 'Rating Curve', 'add_separator' => false, 'description' => '<i> Record of all autosalt events used in rating curves </i>');
     $result[] = array('caption' => 'RC Manual', 'short_caption' => 'RC Manual', 'filename' => 'rcmanual.php', 'name' => 'chrl.rcmanual', 'group_name' => 'Rating Curve', 'add_separator' => false, 'description' => '<i> Record of all manually collected discharges used in rating curves </i>');
     $result[] = array('caption' => 'Site Description', 'short_caption' => 'Site Description', 'filename' => 'site_description.php', 'name' => 'chrl.site_description', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i>General information about autosalt sites</i>');
+    $result[] = array('caption' => 'Field Visits', 'short_caption' => 'Field Visits', 'filename' => 'field_visits.php', 'name' => 'chrl.field_visits', 'group_name' => 'General Information', 'add_separator' => false, 'description' => 'Summary of field visits to autosalt sites');
     $result[] = array('caption' => 'Barrel Periods', 'short_caption' => 'Barrel Periods', 'filename' => 'barrel_periods.php', 'name' => 'chrl.barrel_periods', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i>Record of barrel fills at autosalt sites</i>');
     $result[] = array('caption' => 'Sensors', 'short_caption' => 'Sensors', 'filename' => 'sensors.php', 'name' => 'chrl.sensors', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i> Record of sensors deployed at autosalt sites </i>');
     $result[] = array('caption' => 'RC Summary', 'short_caption' => 'RC Summary', 'filename' => 'rc_summary.php', 'name' => 'chrl.rc_summary', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i> General information about rating curve versions </i>');
+    $result[] = array('caption' => 'Device Magic', 'short_caption' => 'Device Magic', 'filename' => 'device_magic.php', 'name' => 'chrl.device_magic', 'group_name' => 'Default', 'add_separator' => false, 'description' => '');
     return $result;
 }
 
