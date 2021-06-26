@@ -56,8 +56,8 @@
                     new StringField('repairs_adjustments'),
                     new StringField('todo'),
                     new StringField('other'),
-                    new BlobField('upstream_pic'),
-                    new BlobField('downstream_pic'),
+                    new StringField('upstream_pic'),
+                    new StringField('downstream_pic'),
                     new StringField('dmid')
                 )
             );
@@ -97,15 +97,15 @@
                 new FilterColumn($this->dataset, 'time', 'time', 'Time'),
                 new FilterColumn($this->dataset, 'technicians', 'technicians', 'Technicians'),
                 new FilterColumn($this->dataset, 'barrel_fill', 'barrel_fill', 'Barrel Fill'),
-                new FilterColumn($this->dataset, 'cf_collection', 'cf_collection', 'Cf Collection'),
+                new FilterColumn($this->dataset, 'cf_collection', 'cf_collection', 'CF Collection'),
                 new FilterColumn($this->dataset, 'sensor_change', 'sensor_change', 'Sensor Change'),
                 new FilterColumn($this->dataset, 'weather', 'weather', 'Weather'),
-                new FilterColumn($this->dataset, 'repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments'),
+                new FilterColumn($this->dataset, 'repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments'),
                 new FilterColumn($this->dataset, 'todo', 'todo', 'To Dos'),
                 new FilterColumn($this->dataset, 'other', 'other', 'Other'),
-                new FilterColumn($this->dataset, 'upstream_pic', 'upstream_pic', 'Upstream Pic'),
-                new FilterColumn($this->dataset, 'downstream_pic', 'downstream_pic', 'Downstream Pic'),
-                new FilterColumn($this->dataset, 'dmid', 'dmid', 'DMID')
+                new FilterColumn($this->dataset, 'upstream_pic', 'upstream_pic', 'Upstream Picture'),
+                new FilterColumn($this->dataset, 'downstream_pic', 'downstream_pic', 'Downstream Picture'),
+                new FilterColumn($this->dataset, 'dmid', 'dmid', 'Dmid')
             );
         }
     
@@ -205,7 +205,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('YYYY-MM-DD');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -216,7 +216,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('H:i:s');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('Local Time (PST/PDT)');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -244,7 +244,7 @@
             //
             // View column for cf_collection field
             //
-            $column = new TextViewColumn('cf_collection', 'cf_collection', 'Cf Collection', $this->dataset);
+            $column = new TextViewColumn('cf_collection', 'cf_collection', 'CF Collection', $this->dataset);
             $column->SetOrderable(true);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('');
@@ -275,7 +275,7 @@
             //
             // View column for repairs_adjustments field
             //
-            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments', $this->dataset);
+            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -308,7 +308,7 @@
             //
             // View column for upstream_pic field
             //
-            $column = new BlobImageViewColumn('upstream_pic', 'upstream_pic', 'Upstream Pic', $this->dataset, 'chrl_field_visits_upstream_pic_handler_list');
+            $column = new TextViewColumn('upstream_pic', 'upstream_pic', 'Upstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('');
@@ -318,7 +318,7 @@
             //
             // View column for downstream_pic field
             //
-            $column = new BlobImageViewColumn('downstream_pic', 'downstream_pic', 'Downstream Pic', $this->dataset, 'chrl_field_visits_downstream_pic_handler_list');
+            $column = new TextViewColumn('downstream_pic', 'downstream_pic', 'Downstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('');
@@ -382,7 +382,7 @@
             //
             // View column for cf_collection field
             //
-            $column = new TextViewColumn('cf_collection', 'cf_collection', 'Cf Collection', $this->dataset);
+            $column = new TextViewColumn('cf_collection', 'cf_collection', 'CF Collection', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddSingleRecordViewColumn($column);
             
@@ -404,7 +404,7 @@
             //
             // View column for repairs_adjustments field
             //
-            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments', $this->dataset);
+            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
@@ -428,14 +428,14 @@
             //
             // View column for upstream_pic field
             //
-            $column = new BlobImageViewColumn('upstream_pic', 'upstream_pic', 'Upstream Pic', $this->dataset, 'chrl_field_visits_upstream_pic_handler_view');
+            $column = new TextViewColumn('upstream_pic', 'upstream_pic', 'Upstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddSingleRecordViewColumn($column);
             
             //
             // View column for downstream_pic field
             //
-            $column = new BlobImageViewColumn('downstream_pic', 'downstream_pic', 'Downstream Pic', $this->dataset, 'chrl_field_visits_downstream_pic_handler_view');
+            $column = new TextViewColumn('downstream_pic', 'downstream_pic', 'Downstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddSingleRecordViewColumn($column);
         }
@@ -505,7 +505,7 @@
             $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
             $editor->addChoice('Y', 'Y');
             $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Cf Collection', 'cf_collection', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -540,7 +540,7 @@
             // Edit column for repairs_adjustments field
             //
             $editor = new TextAreaEdit('repairs_adjustments_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Repairs Adjustments', 'repairs_adjustments', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Repairs and Adjustments', 'repairs_adjustments', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -572,9 +572,8 @@
             //
             // Edit column for upstream_pic field
             //
-            $editor = new ImageUploader('upstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Upstream Pic', 'upstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_upstream_pic_handler_edit');
+            $editor = new TextEdit('upstream_pic_edit');
+            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -584,9 +583,8 @@
             //
             // Edit column for downstream_pic field
             //
-            $editor = new ImageUploader('downstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Downstream Pic', 'downstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_downstream_pic_handler_edit');
+            $editor = new TextEdit('downstream_pic_edit');
+            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -649,7 +647,7 @@
             $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
             $editor->addChoice('Y', 'Y');
             $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Cf Collection', 'cf_collection', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -678,7 +676,7 @@
             // Edit column for repairs_adjustments field
             //
             $editor = new TextAreaEdit('repairs_adjustments_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Repairs Adjustments', 'repairs_adjustments', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Repairs and Adjustments', 'repairs_adjustments', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -704,9 +702,8 @@
             //
             // Edit column for upstream_pic field
             //
-            $editor = new ImageUploader('upstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Upstream Pic', 'upstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_upstream_pic_handler_multi_edit');
+            $editor = new TextEdit('upstream_pic_edit');
+            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -714,9 +711,8 @@
             //
             // Edit column for downstream_pic field
             //
-            $editor = new ImageUploader('downstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Downstream Pic', 'downstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_downstream_pic_handler_multi_edit');
+            $editor = new TextEdit('downstream_pic_edit');
+            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -777,7 +773,7 @@
             $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
             $editor->addChoice('Y', 'Y');
             $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Cf Collection', 'cf_collection', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -806,7 +802,7 @@
             // Edit column for repairs_adjustments field
             //
             $editor = new TextAreaEdit('repairs_adjustments_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Repairs Adjustments', 'repairs_adjustments', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Repairs and Adjustments', 'repairs_adjustments', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -832,9 +828,8 @@
             //
             // Edit column for upstream_pic field
             //
-            $editor = new ImageUploader('upstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Upstream Pic', 'upstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_upstream_pic_handler_insert');
+            $editor = new TextEdit('upstream_pic_edit');
+            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -842,9 +837,8 @@
             //
             // Edit column for downstream_pic field
             //
-            $editor = new ImageUploader('downstream_pic_edit');
-            $editor->SetShowImage(false);
-            $editColumn = new FileUploadingColumn('Downstream Pic', 'downstream_pic', $editor, $this->dataset, false, false, 'chrl_field_visits_downstream_pic_handler_insert');
+            $editor = new TextEdit('downstream_pic_edit');
+            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -912,7 +906,7 @@
             //
             // View column for cf_collection field
             //
-            $column = new TextViewColumn('cf_collection', 'cf_collection', 'Cf Collection', $this->dataset);
+            $column = new TextViewColumn('cf_collection', 'cf_collection', 'CF Collection', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddPrintColumn($column);
             
@@ -934,7 +928,7 @@
             //
             // View column for repairs_adjustments field
             //
-            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments', $this->dataset);
+            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
@@ -958,14 +952,14 @@
             //
             // View column for upstream_pic field
             //
-            $column = new BlobImageViewColumn('upstream_pic', 'upstream_pic', 'Upstream Pic', $this->dataset, 'chrl_field_visits_upstream_pic_handler_print');
+            $column = new TextViewColumn('upstream_pic', 'upstream_pic', 'Upstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddPrintColumn($column);
             
             //
             // View column for downstream_pic field
             //
-            $column = new BlobImageViewColumn('downstream_pic', 'downstream_pic', 'Downstream Pic', $this->dataset, 'chrl_field_visits_downstream_pic_handler_print');
+            $column = new TextViewColumn('downstream_pic', 'downstream_pic', 'Downstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddPrintColumn($column);
         }
@@ -1026,7 +1020,7 @@
             //
             // View column for cf_collection field
             //
-            $column = new TextViewColumn('cf_collection', 'cf_collection', 'Cf Collection', $this->dataset);
+            $column = new TextViewColumn('cf_collection', 'cf_collection', 'CF Collection', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddExportColumn($column);
             
@@ -1048,7 +1042,7 @@
             //
             // View column for repairs_adjustments field
             //
-            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments', $this->dataset);
+            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
@@ -1072,14 +1066,14 @@
             //
             // View column for upstream_pic field
             //
-            $column = new BlobImageViewColumn('upstream_pic', 'upstream_pic', 'Upstream Pic', $this->dataset, 'chrl_field_visits_upstream_pic_handler_export');
+            $column = new TextViewColumn('upstream_pic', 'upstream_pic', 'Upstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddExportColumn($column);
             
             //
             // View column for downstream_pic field
             //
-            $column = new BlobImageViewColumn('downstream_pic', 'downstream_pic', 'Downstream Pic', $this->dataset, 'chrl_field_visits_downstream_pic_handler_export');
+            $column = new TextViewColumn('downstream_pic', 'downstream_pic', 'Downstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddExportColumn($column);
         }
@@ -1130,7 +1124,7 @@
             //
             // View column for cf_collection field
             //
-            $column = new TextViewColumn('cf_collection', 'cf_collection', 'Cf Collection', $this->dataset);
+            $column = new TextViewColumn('cf_collection', 'cf_collection', 'CF Collection', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddCompareColumn($column);
             
@@ -1152,7 +1146,7 @@
             //
             // View column for repairs_adjustments field
             //
-            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs Adjustments', $this->dataset);
+            $column = new TextViewColumn('repairs_adjustments', 'repairs_adjustments', 'Repairs and Adjustments', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
@@ -1176,14 +1170,14 @@
             //
             // View column for upstream_pic field
             //
-            $column = new BlobImageViewColumn('upstream_pic', 'upstream_pic', 'Upstream Pic', $this->dataset, 'chrl_field_visits_upstream_pic_handler_compare');
+            $column = new TextViewColumn('upstream_pic', 'upstream_pic', 'Upstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddCompareColumn($column);
             
             //
             // View column for downstream_pic field
             //
-            $column = new BlobImageViewColumn('downstream_pic', 'downstream_pic', 'Downstream Pic', $this->dataset, 'chrl_field_visits_downstream_pic_handler_compare');
+            $column = new TextViewColumn('downstream_pic', 'downstream_pic', 'Downstream Picture', $this->dataset);
             $column->SetOrderable(true);
             $grid->AddCompareColumn($column);
         }
@@ -1280,47 +1274,8 @@
         }
     
         protected function doRegisterHandlers() {
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_list', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
             
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_list', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
             
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_print', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_print', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_compare', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_compare', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_insert', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_insert', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_view', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_view', new ImageFitByHeightResizeFilter(3));
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_edit', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_edit', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'upstream_pic', 'chrl_field_visits_upstream_pic_handler_multi_edit', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
-            
-            $handler = new ImageHTTPHandler($this->dataset, 'downstream_pic', 'chrl_field_visits_downstream_pic_handler_multi_edit', new NullFilter());
-            GetApplication()->RegisterHTTPHandler($handler);
         }
        
         protected function doCustomRenderColumn($fieldName, $fieldData, $rowData, &$customText, &$handled)
