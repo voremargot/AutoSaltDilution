@@ -112,6 +112,31 @@ for (D in Visit_Dates){
           query("UPDATE chrl.sensors SET deactivation_date= '%s' WHERE sensorid=%s", Date,SensorID)
           # dbSendQuery(con,query)
           
+        } else if (wk_action=='Add'){
+          Add_Type= ss$sen_add_type
+          if(Add_Type=='Other'){
+            Add_Type=ss$sen_add_type_other
+          }
+          Add_Probe= ss$sen_add_probenum
+          Add_SN= ss$sen_add_sn
+          Add_RiverLoc= ss$sen_add_riverloc
+          if (Add_RiverLoc=='Other'){
+            Add_RiverLoc=ss$sen_add_riverloc_other
+          }
+          
+          Active_Stations=Old_data[which(Old_data$siteid==S & is.na(Old_data$install_date)==FALSE & is.na(Old_data$deactivation_date)==TRUE),]
+          if (Add_Probe %in% Active_Stations$probe_number){
+            print('There is already an active sensor with this probe number! Please review the field data.')
+            next()
+          } 
+          
+          query=sprintf("INSERT INTO chrl.sensors ((siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
+                         (%s,%s,'%s','%s','%s','%s')",S,Add_Probe,Add_Type,Add_SN,Add_RiverLoc,Date)
+          query <- gsub("\\n\\s+", " ", query)
+          query <- gsub('NA',"NULL", query)
+          query <- gsub("'NULL'","NULL",query)
+          query <- gsub('NaN',"NULL",query)
+          # dbSendQuery(con,query)
         }
         
       }
