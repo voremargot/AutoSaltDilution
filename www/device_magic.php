@@ -90,6 +90,7 @@
                     new StringField('sen_add_riverloc_other'),
                     new StringField('sen_add_probenum'),
                     new StringField('sen_sw_sn'),
+                    new StringField('sen_sw_action'),
                     new StringField('sen_sw_position_old'),
                     new StringField('sen_sw_position_old_other'),
                     new StringField('sen_sw_position_new'),
@@ -189,7 +190,8 @@
                 new FilterColumn($this->dataset, 'notes_repairs', 'notes_repairs', 'Notes Repairs'),
                 new FilterColumn($this->dataset, 'notes_todo', 'notes_todo', 'Notes Todo'),
                 new FilterColumn($this->dataset, 'notes_other', 'notes_other', 'Notes Other'),
-                new FilterColumn($this->dataset, 'new', 'new', 'New')
+                new FilterColumn($this->dataset, 'new', 'new', 'New'),
+                new FilterColumn($this->dataset, 'sen_sw_action', 'sen_sw_action', 'Sen Sw Action')
             );
         }
     
@@ -252,7 +254,8 @@
                 ->addColumn($columns['notes_repairs'])
                 ->addColumn($columns['notes_todo'])
                 ->addColumn($columns['notes_other'])
-                ->addColumn($columns['new']);
+                ->addColumn($columns['new'])
+                ->addColumn($columns['sen_sw_action']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -936,6 +939,17 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for sen_sw_action field
+            //
+            $column = new TextViewColumn('sen_sw_action', 'sen_sw_action', 'Sen Sw Action', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -1403,6 +1417,14 @@
             // View column for new field
             //
             $column = new TextViewColumn('new', 'new', 'New', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for sen_sw_action field
+            //
+            $column = new TextViewColumn('sen_sw_action', 'sen_sw_action', 'Sen Sw Action', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
@@ -2031,6 +2053,17 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_sw_action field
+            //
+            $editor = new TextAreaEdit('sen_sw_action_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Sw Action', 'sen_sw_action', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -2541,6 +2574,15 @@
             //
             $editor = new TextAreaEdit('new_edit', 50, 8);
             $editColumn = new CustomEditColumn('New', 'new', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_sw_action field
+            //
+            $editor = new TextAreaEdit('sen_sw_action_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Sw Action', 'sen_sw_action', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -3057,6 +3099,15 @@
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for sen_sw_action field
+            //
+            $editor = new TextAreaEdit('sen_sw_action_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Sw Action', 'sen_sw_action', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -3533,6 +3584,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for sen_sw_action field
+            //
+            $column = new TextViewColumn('sen_sw_action', 'sen_sw_action', 'Sen Sw Action', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -4003,6 +4062,14 @@
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for sen_sw_action field
+            //
+            $column = new TextViewColumn('sen_sw_action', 'sen_sw_action', 'Sen Sw Action', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -4460,6 +4527,14 @@
             // View column for new field
             //
             $column = new TextViewColumn('new', 'new', 'New', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for sen_sw_action field
+            //
+            $column = new TextViewColumn('sen_sw_action', 'sen_sw_action', 'Sen Sw Action', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
