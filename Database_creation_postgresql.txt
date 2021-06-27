@@ -327,6 +327,7 @@ CREATE TABLE chrl.Device_Magic
 	Sen_Add_ProbeNum TEXT,
 
 	Sen_Sw_SN TEXT,
+	Sen_Sw_Action TEXT,
 	Sen_Sw_Position_Old TEXT,
 	Sen_Sw_Position_Old_Other TEXT,
 	Sen_Sw_Position_New TEXT,
@@ -340,7 +341,7 @@ CREATE TABLE chrl.Device_Magic
 	Notes_Repairs TEXT,
 	Notes_ToDo TEXT,
 	Notes_Other TEXT,
-	Try TEXT);
+	New TEXT);
 
 CREATE TABLE chrl.Field_Visits
 (	FID 	SERIAL  PRIMARY KEY,
