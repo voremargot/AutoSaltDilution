@@ -205,7 +205,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('YYYY-MM-DD');
+            $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -216,7 +216,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('H:i:s');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('Local Time (PST/PDT)');
+            $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
