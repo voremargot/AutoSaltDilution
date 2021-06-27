@@ -15,9 +15,11 @@ options(warn = - 1)
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
+#Select new field data for organization
 query= "SELECT * FROM chrl.Device_Magic WHERE new='Yes'"
 Field= dbGetQuery(con, query)
 
+#Select all unique field visit dates of new events
 Visit_Dates= unique(Field$date_visit)
 
 Old_data= dbGetQuery(con, "SELECT * FROM chrl.sensors")
@@ -138,7 +140,30 @@ for (D in Visit_Dates){
           query <- gsub('NaN',"NULL",query)
           # dbSendQuery(con,query)
         } else if (wk_action=="Arrange"){
-        
+          SN= ss$sen_sw_sn
+          Recorded_Sensor= Old_data[which(Old_data$serial_number==SN & Old_data$siteid==S & is.na(Old_data$deactivation_date)==TRUE),]
+          if (nrow(Recorded_Sensor)==0){
+            print('The sensor doesnt exist in the database. Please check the field note')
+          }
+          sensorid= Recorded_Sensor$sensorid
+          if (ss$sen_sw_action=='Position'){
+            Old_positon= ss$sen_sw_position_old
+            if (Old_positon=='Other'){
+              Old_postion= ss$sen_sw_position_old_other
+            } 
+            New_position=ss$sen_sw_position_new
+            if (New_position=='Other'){
+              New_position=ss$sen_sw_position_new_other
+            }
+            
+            query= sprintf("UPDATE chrl.sensors SET VALUES river_loc=%s where sensorid=%s",New_position,sensorid)
+            # dbSendQuery(con,query)
+          } else if (ss$sen_sw_action=='Probe'){
+              Old_PN= ss$sen_sw_pn_old
+              New_PN=ss$sen_sw_pn_new
+              query= sprintf("UPDATE chrl.sensors SET VALUES probe_number=%s where sensorid=%s",New_PN,sensorid)
+              # dbSendQuery(con,query)
+          }
         }
         
       }
