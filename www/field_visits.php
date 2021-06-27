@@ -1265,6 +1265,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
+	    $this->setDetailedDescription( fread(fopen("HTML/Field_Visit_Metadata.html",'r'),filesize("HTML/Field_Visit_Metadata.html")));
     
             return $result;
         }
