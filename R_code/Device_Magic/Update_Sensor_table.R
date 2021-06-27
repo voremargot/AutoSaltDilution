@@ -137,6 +137,8 @@ for (D in Visit_Dates){
           query <- gsub("'NULL'","NULL",query)
           query <- gsub('NaN',"NULL",query)
           # dbSendQuery(con,query)
+        } else if (wk_action=="Arrange"){
+        
         }
         
       }
