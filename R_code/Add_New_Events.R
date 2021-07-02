@@ -48,7 +48,7 @@ options(warn = - 1)
 
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(token="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
@@ -727,7 +727,7 @@ for (S in Stations){
         sw <- rbind(sw,w)
       } else{
         w <- data.frame(SiteID=EC_curve_results[r,'SiteID'],
-                     EventID= EC_curve_results[r,'EventID'],
+                     EventID= EC_curve_result[r,'EventID'],
                      SensorID= EC_curve_results[r,'SensorID'],
                      Start_ECwave= format(EC[EC$Sec==EC_curve_results[r,'Starting_Time'],'TIMESTAMP'],'%H:%M:%S'),
                      End_ECwave=format(EC[EC$Sec==EC_curve_results[r,'Ending_Time'],'TIMESTAMP'],'%H:%M:%S'),
@@ -1248,7 +1248,7 @@ for (r in c(1:nrow(Discharge_Summary))){
 
  if (nrow(Salt_waves)>0){
    for (r in c(1:nrow(Salt_waves))){
-     Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments, Date_Event)
+     Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments,event_date)
      VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL,%s)",
                     Salt_waves[r,"SiteID"],
                     Salt_waves[r,"EventID"],
