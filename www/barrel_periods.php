@@ -47,7 +47,12 @@
                     new IntegerField('periodid', true, true, true),
                     new IntegerField('siteid'),
                     new DateField('starting_date'),
-                    new DateField('ending_date')
+                    new DateField('ending_date'),
+                    new IntegerField('solution_at_start'),
+                    new IntegerField('solution_at_end'),
+                    new IntegerField('salt_added'),
+                    new IntegerField('salt_remaining_on_site'),
+                    new StringField('notes')
                 )
             );
             $this->dataset->AddLookupField('siteid', 'chrl.site_description', new IntegerField('siteid'), new IntegerField('siteid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
@@ -84,7 +89,12 @@
                 new FilterColumn($this->dataset, 'periodid', 'periodid', 'PeriodID'),
                 new FilterColumn($this->dataset, 'siteid', 'LA1', 'SiteID'),
                 new FilterColumn($this->dataset, 'starting_date', 'starting_date', 'Starting Date'),
-                new FilterColumn($this->dataset, 'ending_date', 'ending_date', 'Ending Date')
+                new FilterColumn($this->dataset, 'ending_date', 'ending_date', 'Ending Date'),
+                new FilterColumn($this->dataset, 'solution_at_start', 'solution_at_start', 'Solution At Start'),
+                new FilterColumn($this->dataset, 'solution_at_end', 'solution_at_end', 'Solution At End'),
+                new FilterColumn($this->dataset, 'salt_added', 'salt_added', 'Salt Added'),
+                new FilterColumn($this->dataset, 'salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site'),
+                new FilterColumn($this->dataset, 'notes', 'notes', 'Notes')
             );
         }
     
@@ -94,7 +104,12 @@
                 ->addColumn($columns['periodid'])
                 ->addColumn($columns['siteid'])
                 ->addColumn($columns['starting_date'])
-                ->addColumn($columns['ending_date']);
+                ->addColumn($columns['ending_date'])
+                ->addColumn($columns['solution_at_start'])
+                ->addColumn($columns['solution_at_end'])
+                ->addColumn($columns['salt_added'])
+                ->addColumn($columns['salt_remaining_on_site'])
+                ->addColumn($columns['notes']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -185,6 +200,69 @@
             $column->SetDescription('');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
+            
+            //
+            // View column for solution_at_start field
+            //
+            $column = new NumberViewColumn('solution_at_start', 'solution_at_start', 'Solution At Start', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('L');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
+            
+            //
+            // View column for solution_at_end field
+            //
+            $column = new NumberViewColumn('solution_at_end', 'solution_at_end', 'Solution At End', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('L');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
+            
+            //
+            // View column for salt_added field
+            //
+            $column = new NumberViewColumn('salt_added', 'salt_added', 'Salt Added', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('kg');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
+            
+            //
+            // View column for salt_remaining_on_site field
+            //
+            $column = new NumberViewColumn('salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('kg');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('');
+            $column->SetFixedWidth(null);
+            $grid->AddViewColumn($column);
         }
     
         protected function AddSingleRecordViewColumns(Grid $grid)
@@ -220,6 +298,54 @@
             $column = new DateTimeViewColumn('ending_date', 'ending_date', 'Ending Date', $this->dataset);
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for solution_at_start field
+            //
+            $column = new NumberViewColumn('solution_at_start', 'solution_at_start', 'Solution At Start', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for solution_at_end field
+            //
+            $column = new NumberViewColumn('solution_at_end', 'solution_at_end', 'Solution At End', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for salt_added field
+            //
+            $column = new NumberViewColumn('salt_added', 'salt_added', 'Salt Added', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for salt_remaining_on_site field
+            //
+            $column = new NumberViewColumn('salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddSingleRecordViewColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
         }
     
@@ -283,6 +409,61 @@
             $editColumn->setAllowSingleViewCellEdit(false);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_start field
+            //
+            $editor = new TextEdit('solution_at_start_edit');
+            $editColumn = new CustomEditColumn('Solution At Start', 'solution_at_start', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_end field
+            //
+            $editor = new TextEdit('solution_at_end_edit');
+            $editColumn = new CustomEditColumn('Solution At End', 'solution_at_end', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_added field
+            //
+            $editor = new TextEdit('salt_added_edit');
+            $editColumn = new CustomEditColumn('Salt Added', 'salt_added', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_remaining_on_site field
+            //
+            $editor = new TextEdit('salt_remaining_on_site_edit');
+            $editColumn = new CustomEditColumn('Salt Remaining On Site', 'salt_remaining_on_site', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
@@ -301,6 +482,51 @@
             //
             $editor = new DateTimeEdit('ending_date_edit', false, 'Y-m-d');
             $editColumn = new CustomEditColumn('Ending Date', 'ending_date', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_start field
+            //
+            $editor = new TextEdit('solution_at_start_edit');
+            $editColumn = new CustomEditColumn('Solution At Start', 'solution_at_start', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_end field
+            //
+            $editor = new TextEdit('solution_at_end_edit');
+            $editColumn = new CustomEditColumn('Solution At End', 'solution_at_end', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_added field
+            //
+            $editor = new TextEdit('salt_added_edit');
+            $editColumn = new CustomEditColumn('Salt Added', 'salt_added', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_remaining_on_site field
+            //
+            $editor = new TextEdit('salt_remaining_on_site_edit');
+            $editColumn = new CustomEditColumn('Salt Remaining On Site', 'salt_remaining_on_site', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddMultiEditColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -360,6 +586,51 @@
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_start field
+            //
+            $editor = new TextEdit('solution_at_start_edit');
+            $editColumn = new CustomEditColumn('Solution At Start', 'solution_at_start', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for solution_at_end field
+            //
+            $editor = new TextEdit('solution_at_end_edit');
+            $editColumn = new CustomEditColumn('Solution At End', 'solution_at_end', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for salt_added field
+            //
+            $editor = new TextEdit('salt_added_edit');
+            $editColumn = new CustomEditColumn('Salt Added', 'salt_added', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for salt_remaining_on_site field
+            //
+            $editor = new TextEdit('salt_remaining_on_site_edit');
+            $editColumn = new CustomEditColumn('Salt Remaining On Site', 'salt_remaining_on_site', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
+            
+            //
+            // Edit column for notes field
+            //
+            $editor = new TextAreaEdit('notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddInsertColumn($editColumn);
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -402,6 +673,54 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
             $grid->AddPrintColumn($column);
+            
+            //
+            // View column for solution_at_start field
+            //
+            $column = new NumberViewColumn('solution_at_start', 'solution_at_start', 'Solution At Start', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddPrintColumn($column);
+            
+            //
+            // View column for solution_at_end field
+            //
+            $column = new NumberViewColumn('solution_at_end', 'solution_at_end', 'Solution At End', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddPrintColumn($column);
+            
+            //
+            // View column for salt_added field
+            //
+            $column = new NumberViewColumn('salt_added', 'salt_added', 'Salt Added', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddPrintColumn($column);
+            
+            //
+            // View column for salt_remaining_on_site field
+            //
+            $column = new NumberViewColumn('salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddPrintColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddPrintColumn($column);
         }
     
         protected function AddExportColumns(Grid $grid)
@@ -438,6 +757,54 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
             $grid->AddExportColumn($column);
+            
+            //
+            // View column for solution_at_start field
+            //
+            $column = new NumberViewColumn('solution_at_start', 'solution_at_start', 'Solution At Start', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddExportColumn($column);
+            
+            //
+            // View column for solution_at_end field
+            //
+            $column = new NumberViewColumn('solution_at_end', 'solution_at_end', 'Solution At End', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddExportColumn($column);
+            
+            //
+            // View column for salt_added field
+            //
+            $column = new NumberViewColumn('salt_added', 'salt_added', 'Salt Added', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddExportColumn($column);
+            
+            //
+            // View column for salt_remaining_on_site field
+            //
+            $column = new NumberViewColumn('salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddExportColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
+            $grid->AddExportColumn($column);
         }
     
         private function AddCompareColumns(Grid $grid)
@@ -463,6 +830,54 @@
             $column = new DateTimeViewColumn('ending_date', 'ending_date', 'Ending Date', $this->dataset);
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for solution_at_start field
+            //
+            $column = new NumberViewColumn('solution_at_start', 'solution_at_start', 'Solution At Start', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for solution_at_end field
+            //
+            $column = new NumberViewColumn('solution_at_end', 'solution_at_end', 'Solution At End', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for salt_added field
+            //
+            $column = new NumberViewColumn('salt_added', 'salt_added', 'Salt Added', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for salt_remaining_on_site field
+            //
+            $column = new NumberViewColumn('salt_remaining_on_site', 'salt_remaining_on_site', 'Salt Remaining On Site', $this->dataset);
+            $column->SetOrderable(true);
+            $column->setNumberAfterDecimal(0);
+            $column->setThousandsSeparator('');
+            $column->setDecimalSeparator('');
+            $grid->AddCompareColumn($column);
+            
+            //
+            // View column for notes field
+            //
+            $column = new TextViewColumn('notes', 'notes', 'Notes', $this->dataset);
+            $column->SetOrderable(true);
+            $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
         }
     
@@ -554,7 +969,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/Barrel_Periods_Metadata.html",'r'),filesize("HTML/Barrel_Periods_Metadata.html")));
+	    $this->setDetailedDescription( fread(fopen("HTML/Barrel_Periods_Metadata.html",'r'),filesize("HTML/Barrel_Periods_Metadata.html")));
     
             return $result;
         }
