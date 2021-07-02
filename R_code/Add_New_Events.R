@@ -28,7 +28,7 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
-print(sprintf("Date:%s, Time:%s",Sys.Date(), Sys.Time())
+print(sprintf("Date and Time:%s", Sys.time()))
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = "-Xmx8g")
 gg=gc()
