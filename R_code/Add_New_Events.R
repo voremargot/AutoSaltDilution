@@ -28,9 +28,10 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
-print(Sys.Date())
+print(sprintf("Date:%s, Time:%s",Sys.Date(), Sys.Time())
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+options(java.parameters = "-Xmx8g")
+gg=gc()
 
 setwd("/home/autosalt/AutoSaltDilution/R_code")
 
@@ -55,7 +56,7 @@ drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(844)
+Stations= c(626,703,844,1015)
 for (S in Stations){
   
   ##############################################
@@ -122,7 +123,7 @@ for (S in Stations){
     DateTime <- strptime(New_Events$DoseReleaseTS[N], format="%m/%d/%Y %H:%M:%S")  
     Date <- format(DateTime, format="%Y-%m-%d")
     
-    print(sprintf('%s-%s',Event_Num,Date))
+    print(sprintf('WS%s: %s-%s',SiteID,Event_Num,Date))
     
     Time  <- format(DateTime, format="%H:%M:%S")
     Temp <- New_Events$StreamTemperatureRelease[N]
@@ -276,7 +277,7 @@ for (S in Stations){
     
     # Select only columns of EC to analyze (ECT if possible)
     Headers= Column_Names(EC)
-    EC= select(EC, c('TIMESTAMP','Sec',Headers))
+    EC= select(EC, c('TIMESTAMP','Sec',all_of(Headers)))
     
     if (lapply(EC,class)[Headers[1]]=="character"){
       for (H in c(1:length(Headers))){
@@ -727,7 +728,7 @@ for (S in Stations){
         sw <- rbind(sw,w)
       } else{
         w <- data.frame(SiteID=EC_curve_results[r,'SiteID'],
-                     EventID= EC_curve_result[r,'EventID'],
+                     EventID= EC_curve_results[r,'EventID'],
                      SensorID= EC_curve_results[r,'SensorID'],
                      Start_ECwave= format(EC[EC$Sec==EC_curve_results[r,'Starting_Time'],'TIMESTAMP'],'%H:%M:%S'),
                      End_ECwave=format(EC[EC$Sec==EC_curve_results[r,'Ending_Time'],'TIMESTAMP'],'%H:%M:%S'),
@@ -1249,7 +1250,7 @@ for (r in c(1:nrow(Discharge_Summary))){
  if (nrow(Salt_waves)>0){
    for (r in c(1:nrow(Salt_waves))){
      Query <- sprintf("INSERT INTO chrl.salt_waves (SiteID, EventID, SensorID,Start_ECWave, End_ECWave,Time_MaxEC,StartingEC, EndingEC,PeakEC,Flags, Comments,event_date)
-     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL,%s)",
+     VALUES (%s,%s,%s,'%s','%s','%s',%s,%s,%s,'%s',NULL,'%s')",
                     Salt_waves[r,"SiteID"],
                     Salt_waves[r,"EventID"],
                     Salt_waves[r,"SensorID"],
@@ -1290,7 +1291,7 @@ for (r in c(1:nrow(Discharge_Summary))){
  if (nrow(Autosalt_forms)>0){
    for (r in c(1:nrow(Autosalt_forms))){
 
-     Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made) VALUES (%s,%s,'%s','N',NULL,%s)",
+     Query <- sprintf("INSERT INTO chrl.autosalt_forms (EventID, SiteID, Link, Checked, Edits_made,event_date) VALUES (%s,%s,'%s','N',NULL,'%s')",
                     Autosalt_forms[r,"EventID"],
                     Autosalt_forms[r,"SiteID"],
                     Autosalt_forms[r,'Link'],
@@ -1304,8 +1305,10 @@ for (r in c(1:nrow(Discharge_Summary))){
  }
 }
 
-options(warn = 0)
+
 dbDisconnect(con)
+options(warn = 0)
+
 
 print('---------------------------------------------------')
 print('---------------------------------------------------')
