@@ -98,6 +98,7 @@ for (S in Stations){
   EID_Array=c(0)
 
   for (N in c(1:3)){#c(1:nrow(New_Events))){
+    Overall_Flags <- NA
     DisSummaryComm <- NA
     
     
@@ -197,11 +198,11 @@ for (S in Stations){
       
       EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-      if (is.na(DisSummaryComm)==TRUE){
-        DisSummaryComm='From Autodose event system'
+      if (is.na(Overall_Flags)==TRUE){
+        Overall_Flags='AD'
       } else {
-        DisSummaryComm=append(DisSummaryComm,'From Autodose event system')
-        DisSummaryComm <- paste(DisSummaryComm, collapse=';')
+        Overall_Flags=append(Overall_Flags,'AD')
+        Overall_Flags <- paste(Overall_Flags, collapse=';')
       }
       
       
@@ -218,11 +219,11 @@ for (S in Stations){
         
         EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
         EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-        if (is.na(DisSummaryComm)==TRUE){
-          DisSummaryComm='From Autodose event system'
+        if (is.na(Overall_Flags)==TRUE){
+          Overall_Flags='AD'
         } else {
-          DisSummaryComm=append(DisSummaryComm,'From Autodose event system')
-          DisSummaryComm <- paste(DisSummaryComm, collapse=';')
+          Overall_Flags=append(Overall_Flags,'AD')
+          Overall_Flags <- paste(Overall_Flags, collapse=';')
         }
       }
     }  
@@ -247,10 +248,16 @@ for (S in Stations){
       Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
       Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
         
+      if (is.na(Overall_Flags)==TRUE){
+        Overall_Flags='AD'
+      } else {
+        Overall_Flags=append(Overall_Flags,'ND')
+        Overall_Flags <- paste(Overall_Flags, collapse=';')
+      }
       
       DS= data.frame(EventID=Event_Num, SiteID=S, PeriodID=Period_ID, Date= Date, Temp= Temp, Start_Time=Time, 
                      Stage_DoseRelease= Stage_Start, Stage_Average= Stage_Average, Stage_Min= Stage_Min, Stage_Max= Stage_Max, Stage_Std= Stage_Std,
-                     Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags='ND', ECb=NA,
+                     Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags=Overall_Flags, ECb=NA,
                      Mixing= NA, Notes= NA)
       Discharge_Summary= rbind(Discharge_Summary,DS)
       next()
@@ -666,6 +673,12 @@ for (S in Stations){
     
     if (is.na(DS_Flag)==FALSE){
       ECB_overall <- NA
+      if (is.na(Overall_Flags)==TRUE){
+        Overall_Flags=DS_Flag
+      } else {
+        Overall_Flags=append(Overall_Flags,DS_Flag)
+        Overall_Flags <- paste(Overall_Flags, collapse=';')
+      }
     } else if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))==0){
       ECB_overall <- NA
     } else if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))>1){
@@ -679,6 +692,7 @@ for (S in Stations){
     }
     
     
+
   
     
     
@@ -1112,12 +1126,21 @@ for (S in Stations){
     if (sum(is.na(D_Array))<length(D_Array)){
       if (is.na(DisSummaryComm)==TRUE){
         if (abs(max(D_Array,na.rm=TRUE))> 35){
-          DisSummaryComm <- 'Offset'
+          if (is.na(Overall_Flags)==TRUE){
+            Overall_Flags='OS'
+          } else {
+            Overall_Flags=append(Overall_Flags,'OS')
+            Overall_Flags <- paste(Overall_Flags, collapse=';')
+          }
         }
       } else {
         if (abs(max(D_Array,na.rm=TRUE))> 35){
-          DisSummaryComm <- append(DisSummaryComm,'Offset')
-          DisSummaryComm <- paste(DisSummaryComm, collapse=';')
+          if (is.na(Overall_Flags)==TRUE){
+            Overall_Flags='OS'
+          } else {
+            Overall_Flags=append(Overall_Flags,'OS')
+            Overall_Flags <- paste(Overall_Flags, collapse=';')
+          }
         }
       }
     }
@@ -1158,7 +1181,7 @@ for (S in Stations){
                   Salt_Volume= Salt_Vol,
                   Discharge_Avg=NA,
                   Uncert=  NA,
-                  Flags=DS_Flag,
+                  Flags=Overall_Flags,
                   ECb=ECB_overall,
                   Mixing=NA,
                   Notes= DisSummaryComm)
@@ -1181,7 +1204,7 @@ for (S in Stations){
                 Salt_Volume= Salt_Vol,
                 Discharge_Avg=Average_Discharge,
                 Uncert=  TotalUncert,
-                Flags=DS_Flag,
+                Flags=Overall_Flags,
                 ECb=ECB_overall,
                 Mixing=Mixing,
                 Notes= DisSummaryComm)

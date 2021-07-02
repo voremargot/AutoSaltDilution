@@ -19,18 +19,23 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-options(java.parameters <- c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+cat("\n")
+print(sprintf("Date:%s, Time:%s",Sys.Date(), Sys.Time()))
+readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+options(java.parameters <- "-Xmx8g")
+gg=gc()
 
-library(googledrive)
-library(DBI)
-library(openxlsx)
-library(lubridate)
-library(stringi)
-library(prodlim)
+suppressMessages(library(googledrive))
+suppressMessages(library(DBI))
+suppressMessages(library(openxlsx))
+suppressMessages(library(lubridate))
+suppressMessages(library(stringi))
+suppressMessages(library(prodlim))
+
+options(warn = - 1)  
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(email=Sys.getenv('email_gdrive'))
+drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 
 ##-----------------------------------------------------------------------------------
 ##-------------- Finding CF field sheets that are new to the drive------------------
@@ -278,4 +283,10 @@ for (R in c(1:nrow(Sensor_Summary))){
 
 
 
+dbDisconnect(con)
+options(warn = 0)
+
+
+print('---------------------------------------------------')
+print('---------------------------------------------------')
 
