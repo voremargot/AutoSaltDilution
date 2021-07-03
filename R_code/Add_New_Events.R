@@ -28,12 +28,12 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
-print(sprintf("Date:%s, Time:%s",Sys.Date(), Sys.Time()))
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+print(sprintf("Date:%s", Sys.time()))
+readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
-setwd("/home/autosalt/AutoSaltDilution/R_code")
+setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 #Libraries
 
@@ -43,30 +43,33 @@ suppressMessages(library(XLConnect))
 suppressMessages(library(dplyr))
 suppressMessages(library(googledrive))
 suppressMessages(library(tidyr))
+library(curl)
 source("AutoSalt_Functions.R")
 
 options(warn = - 1)  
 
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626,703,844,1015)
+Stations= c(844)
 for (S in Stations){
   
   ##############################################
   # Finding new events for discharge calculation
   ###############################################
-
+  DumpEvent_File <-  sprintf("working_directory/%i_DoesEvent.csv",S)
   if (S==626){
-    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
+    d <-  curl_download(
+      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S),DumpEvent_File)
   } else {
-    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
+    d <- curl_download(
+      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S),DumpEvent_File)
   }
   
   # Reading in newly downloaded event file
@@ -78,12 +81,12 @@ for (S in Stations){
   query <- sprintf("SELECT EventID,SiteID FROM chrl.autosalt_summary WHERE SiteID=%i",S)
   Old_Events <- dbGetQuery(con, query)
   
-  query= sprintf('SELECT EventID,SiteID,SensorID FROM chrl.all_discharge_calcs WHERE CFID=1 AND SiteID=%s',S)
-  Events=dbGetQuery(con, query)
-  Events= unique(Events$eventid)
+  # query= sprintf('SELECT EventID,SiteID,SensorID FROM chrl.all_discharge_calcs WHERE CFID= AND SiteID=%s',S)
+  # Events=dbGetQuery(con, query)
+  # Events= unique(Events$eventid)
   
   # New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[!(Dump_Event$DoseEventID %in% as.numeric(Old_Events$eventid)), ]
+  New_Events<- Dump_Event[Dump_Event$DoseEventID==975031801, ]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
   
   
@@ -96,9 +99,7 @@ for (S in Stations){
   # Number= sample(1:nrow(New_Events),1)
   
   EID_Array=c(0)
-
-  for (N in c(1:3)){#c(1:nrow(New_Events))){
-    Overall_Flags <- NA
+  for (N in c(1:2)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     
@@ -106,7 +107,6 @@ for (S in Stations){
     # Extracting metadata for the event
     ###################################
     Event_Num <- New_Events$DoseEventID[N]
-    
     
     # Skip event if no event number is present 
     if (is.na(Event_Num)==TRUE){
@@ -119,18 +119,17 @@ for (S in Stations){
     
     EID_Array=append(EID_Array, Event_Num)
     
-  
+    
     SiteID <- S
     DateTime <- strptime(New_Events$DoseReleaseTS[N], format="%m/%d/%Y %H:%M:%S")  
     Date <- format(DateTime, format="%Y-%m-%d")
     
-    print(sprintf('WS%s: %s-%s',SiteID,Event_Num,Date))
     
     Time  <- format(DateTime, format="%H:%M:%S")
     Temp <- New_Events$StreamTemperatureRelease[N]
     Salt_Vol <- New_Events$CalculatedSolutionVolume[N]*0.9204 #correction for salt volume
     Stage_Start <- New_Events$StreamHeightRelease[N]*100
-
+    
     
     #########################################
     #Determine the barrel period of the event
@@ -155,29 +154,22 @@ for (S in Stations){
     # See how many CF have happened in the barrel period
     query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
     Barrel_Period_CFs <- dbGetQuery(con, query)
-    Barrel_Period_CFs=Barrel_Period_CFs[which(Barrel_Period_CFs$temp > (Temp-5) & Barrel_Period_CFs$temp <(Temp+5)),]
     
-    Usable_trials= sum(Barrel_Period_CFs$trial)
-    if (Usable_trials < 4 & is.null(Periods$ending_date)==TRUE){
-      print(sprintf('Not enough valid CF measurements to evaluate Event %i at site %i:SKIPPING',Event_Num,SiteID))
+    if (nrow(Barrel_Period_CFs)<4 & is.null(Periods$ending_date)==TRUE){
+      print(sprintf('Not enough CF measurements have been taken to evaluate Event %i at site %i',Event_Num,SiteID))
       next()
     }
- 
-    if (nrow(Barrel_Period_CFs)==0){
-      query <- sprintf("SELECT * FROM chrl.calibration_events WHERE (PeriodID=%i)",Period_ID)
-      Barrel_Period_CFs <- dbGetQuery(con, query)
-      DisSummaryComm='CF Values not chosen by temperature'
-      
-    }
+    
     ###################################
     # Downloading EC data for the event
     ###################################
-             
+    
     # Downloading raw EC Data for event from Hakai
-   # EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
-   # exists <- curl_fetch_disk(
-    #  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
-   EC_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num)
+    EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
+    exists <- curl_fetch_disk(
+      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
+    d <- curl_download(
+      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
     
     
     # Determine if the EC file has data in it  
@@ -189,8 +181,9 @@ for (S in Stations){
     
     # If there is no data in the EC file, read in autodose file to see if event was captured
     if (CNames=='EMPTY'){
-      #AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
-      AutoDose_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
+      AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
+      d <- curl_download(
+        sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
       
       CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
       EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
@@ -198,12 +191,8 @@ for (S in Stations){
       
       EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-      if (is.na(Overall_Flags)==TRUE){
-        Overall_Flags='AD'
-      } else {
-        Overall_Flags=append(Overall_Flags,'AD')
-        Overall_Flags <- paste(Overall_Flags, collapse=';')
-      }
+      DisSummaryComm='From Autodose event system'
+      file.remove(EC_filename)
       
       
     } else {
@@ -212,62 +201,38 @@ for (S in Stations){
       
       # If there is less than 2min of data in the EC file check the autodose file  
       if (nrow(EC)<120){
-        AutoDose_filename <-  sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
+        AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
+        d <- curl_download(
+          sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S),AutoDose_filename)
         CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
         EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
         colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
         
         EC_Dose$TIMESTAMP <- strptime(EC_Dose$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
         EC<-EC_Dose[EC_Dose$TIMESTAMP> (DateTime-900) & EC_Dose$TIMESTAMP < (DateTime+3600),]
-        if (is.na(Overall_Flags)==TRUE){
-          Overall_Flags='AD'
-        } else {
-          Overall_Flags=append(Overall_Flags,'AD')
-          Overall_Flags <- paste(Overall_Flags, collapse=';')
-        }
+        DisSummaryComm='From Autodose event system'
       }
     }  
-      
+    
     # If there is still less than 2min of data, save the event in discharge summary and continue
     if (nrow(EC)< 120){
-      Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
-      CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
-      Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
-      colnames(Stage) <- CNames
-      Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
-      
-      Stage_Subset <- Stage[(Stage$DoseEventID==Event_Num),]
-      Stage_Subset$Sec <- c(1:nrow(Stage_Subset))
-      
-      Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
-      Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
-      
-      
-      Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
-      Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)
-      Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
-      Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
-        
-      if (is.na(Overall_Flags)==TRUE){
-        Overall_Flags='AD'
-      } else {
-        Overall_Flags=append(Overall_Flags,'ND')
-        Overall_Flags <- paste(Overall_Flags, collapse=';')
-      }
-      
       DS= data.frame(EventID=Event_Num, SiteID=S, PeriodID=Period_ID, Date= Date, Temp= Temp, Start_Time=Time, 
-                     Stage_DoseRelease= Stage_Start, Stage_Average= Stage_Average, Stage_Min= Stage_Min, Stage_Max= Stage_Max, Stage_Std= Stage_Std,
-                     Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags=Overall_Flags, ECb=NA,
+                     Stage_DoseRelease= NA, Stage_Average= NA, Stage_Min= NA, Stage_Max= NA, Stage_Std= NA,
+                     Stage_Dir=NA, Salt_Volume= Salt_Vol, Discharge_Avg=NA, Uncert=NA, Flags='ND', ECb=NA,
                      Mixing= NA, Notes= NA)
       Discharge_Summary= rbind(Discharge_Summary,DS)
+      file.remove(AutoDose_filename)
+      file.remove(EC_filename)
       next()
     }
     
-
+    
     ###############################
     # Download stage data for event
     ###############################
-    Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
+    Stage_filename <- sprintf("working_directory/%i_Stagedata.csv",S)
+    d <- curl_download(
+      sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S),Stage_filename)
     CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
     Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
     colnames(Stage) <- CNames
@@ -1105,16 +1070,29 @@ for (S in Stations){
     if (length(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'])==0){
       Discharge_Results[R,'Flags'] <- NA
       Discharge_Results[R,'Flag_count'] <- NA
+      Discharge_Results[R,'SD'] <- 'N'
     } else {
       Discharge_Results[R,'Flags'] <- EC_curve_results[EC_curve_results$SensorID==SID,'Comment']
-      Discharge_Results[R,'Flag_count'] <- length(unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ",")))
+      FG= unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ","))
+      if (is.na(FG)==TRUE){
+        Discharge_Results[R,'Flag_count']=0
+      } else {
+        Discharge_Results[R,'Flag_count'] <- length(FG)
+      }
+      
+      
+      if ('Sd' %in% FG){
+        Discharge_Results[R,'SD'] <- 'Y'
+      } else {
+        Discharge_Results[R,'SD'] <- 'N'
+      }
     }
   }
   
   ###########################################
   # Look for timing offset between salt waves
   ###########################################
-  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2),'SensorID'])
+  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2 | Discharge_Results$SD=='N'),'SensorID'])
   if (length(which(is.na(EC_curve_results$Time_Max)==TRUE))< length(EC_curve_results$Time_Max) & (is.na(DS_Flag)==TRUE) & length(Probes_low_flag_count)>1){
     Combo <- combn(EC_curve_results[EC_curve_results$SensorID %in% Probes_low_flag_count,'Time_Max'],2)
     D_Array <- array()
@@ -1148,15 +1126,15 @@ for (S in Stations){
   
   
   # Only summarize values if salt wave has less than 2 flags 
-  Max_Q <- max(Discharge_Results[Discharge_Results$Flag_count <2, 'QP'],na.rm=TRUE)
-  Min_Q <- min(Discharge_Results[Discharge_Results$Flag_count <2, 'QM'],na.rm=TRUE)
+  Max_Q <- max(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N') , 'QP'],na.rm=TRUE)
+  Min_Q <- min(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N'), 'QM'],na.rm=TRUE)
   
-  Average_Discharge <- mean(Discharge_Results[Discharge_Results$Flag_count<2, 'Discharge'], na.rm=TRUE)
+  Average_Discharge <- mean(Discharge_Results[which(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'), 'Discharge'], na.rm=TRUE)
   TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))  
   
   # Flag which discharge values are part of the average discharge calculation
-  Discharge_Results[Discharge_Results$Flag_count<2,'Used'] <- 'Y'
-  Discharge_Results[!(Discharge_Results$Flag_count<2),'Used'] <- 'N'
+  Discharge_Results[(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'Y'
+  Discharge_Results[!(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'N'
   
   # Determine the mixing
   Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),])
