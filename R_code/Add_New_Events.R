@@ -531,7 +531,7 @@ for (S in Stations){
           
           # Check to see if, after a large dip/jump in EC, it rebounds to previous levels
           if (abs(diff_EC) >3){
-            for (j in c(1,2,3,4)){
+            for (j in c(1,2,3,4,5,6,7,8,9,10)){
               if ((i+j) > nrow(EC_saltwave)){
                 break
               }
@@ -1100,21 +1100,50 @@ for (S in Stations){
   Discharge_Results$QM <- Discharge_Results$Discharge-Discharge_Results$AbsErr
   
   # Determine the number for flags that were recorded for each salt wave
-  for (R in c(1:nrow(Discharge_Results))){
+for (R in c(1:nrow(Discharge_Results))){
     SID <- Discharge_Results[R,'SensorID']
     if (length(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'])==0){
       Discharge_Results[R,'Flags'] <- NA
       Discharge_Results[R,'Flag_count'] <- NA
+      Discharge_Results[R,'SD'] <- 'N'
     } else {
       Discharge_Results[R,'Flags'] <- EC_curve_results[EC_curve_results$SensorID==SID,'Comment']
-      Discharge_Results[R,'Flag_count'] <- length(unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ",")))
+      FG= unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ","))
+      if (is.na(FG)==TRUE){
+        Discharge_Results[R,'Flag_count']=0
+      } else {
+        Discharge_Results[R,'Flag_count'] <- length(FG)
+      }
+      
+      
+      if ('Sd' %in% FG){
+        Discharge_Results[R,'SD'] <- 'Y'
+      } else {
+        Discharge_Results[R,'SD'] <- 'N'
+      }
     }
   }
+
+
+
+
+
+
+#  for (R in c(1:nrow(Discharge_Results))){
+ #   SID <- Discharge_Results[R,'SensorID']
+  #  if (length(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'])==0){
+   #   Discharge_Results[R,'Flags'] <- NA
+    #  Discharge_Results[R,'Flag_count'] <- NA
+    #} else {
+     # Discharge_Results[R,'Flags'] <- EC_curve_results[EC_curve_results$SensorID==SID,'Comment']
+      #Discharge_Results[R,'Flag_count'] <- length(unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ",")))
+   # }
+ # }
   
   ###########################################
   # Look for timing offset between salt waves
   ###########################################
-  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2),'SensorID'])
+  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N'),'SensorID'])
   if (length(which(is.na(EC_curve_results$Time_Max)==TRUE))< length(EC_curve_results$Time_Max) & (is.na(DS_Flag)==TRUE) & length(Probes_low_flag_count)>1){
     Combo <- combn(EC_curve_results[EC_curve_results$SensorID %in% Probes_low_flag_count,'Time_Max'],2)
     D_Array <- array()
@@ -1148,15 +1177,30 @@ for (S in Stations){
   
   
   # Only summarize values if salt wave has less than 2 flags 
-  Max_Q <- max(Discharge_Results[Discharge_Results$Flag_count <2, 'QP'],na.rm=TRUE)
-  Min_Q <- min(Discharge_Results[Discharge_Results$Flag_count <2, 'QM'],na.rm=TRUE)
+
+
+  Max_Q <- max(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N') , 'QP'],na.rm=TRUE)
+  Min_Q <- min(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N'), 'QM'],na.rm=TRUE)
+
+  Average_Discharge <- mean(Discharge_Results[which(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'), 'Discharge'], na.rm=TRUE)
+  TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))
+
+  # Flag which discharge values are part of the average discharge calculation
+  Discharge_Results[(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'Y'
+  Discharge_Results[!(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'N'
+
+
+
+
+ # Max_Q <- max(Discharge_Results[Discharge_Results$Flag_count <2, 'QP'],na.rm=TRUE)
+ # Min_Q <- min(Discharge_Results[Discharge_Results$Flag_count <2, 'QM'],na.rm=TRUE)
   
-  Average_Discharge <- mean(Discharge_Results[Discharge_Results$Flag_count<2, 'Discharge'], na.rm=TRUE)
-  TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))  
+ # Average_Discharge <- mean(Discharge_Results[Discharge_Results$Flag_count<2, 'Discharge'], na.rm=TRUE)
+ # TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))  
   
   # Flag which discharge values are part of the average discharge calculation
-  Discharge_Results[Discharge_Results$Flag_count<2,'Used'] <- 'Y'
-  Discharge_Results[!(Discharge_Results$Flag_count<2),'Used'] <- 'N'
+ # Discharge_Results[Discharge_Results$Flag_count<2,'Used'] <- 'Y'
+ # Discharge_Results[!(Discharge_Results$Flag_count<2),'Used'] <- 'N'
   
   # Determine the mixing
   Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),])
