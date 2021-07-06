@@ -44,7 +44,7 @@ query <- sprintf("SELECT * FROM chrl.googledriveid")
 Old_CF_Events <- dbGetQuery(con, query)
 
 Drive_Sheets <- drive_ls("AutoSalt_Hakai_Project/CF_Measurements")
-New_Events <- Drive_Sheets[!(Drive_Sheets$id %in% Old_CF_Events$driveid), ]
+New_Events <- Drive_Sheets[!(Drive_Sheets$id %in% Old_CF_Events[Old_CF_Events$docid>430,'driveid']), ]
 
 if (nrow(New_Events)<1){
   print('There are no new CF events to upload')
@@ -201,7 +201,7 @@ for (r in c(1:nrow(Uni))){
                    Uni[r,"Trials"],
                    Uni[r,"Loc"])
   query <- gsub("\\n\\s+", " ", query)
-  dbSendQuery(con, query)
+  #dbSendQuery(con, query)
 }
 
 
@@ -243,7 +243,7 @@ for (R in c(1:nrow(Events_added))){
             Events_added[R,'added'],
             CF_Summary[which(CF_Summary$Num==Number),'CalEventID'])
   query <- gsub("\\n\\s+", " ", query)
-  dbSendQuery(con, query)
+  #dbSendQuery(con, query)
 }
 
 # Assing a trial number to each result
@@ -279,18 +279,66 @@ for (R in c(1:nrow(Sensor_Summary))){
   query <- gsub("\\n\\s+", " ", query)
   query <- gsub('NA',"NULL", query)
   query <- gsub("'NULL'","NULL",query)
-  dbSendQuery(con, query)
+  #dbSendQuery(con, query)
 }
 
+
+# Assign average tempertaure to calibration event table
 CalE= unique(CF_Summary$CalEventID)
+CalResults=data.frame()
 for (E in CalE){
   query= sprintf("SELECT Temp from chrl.calibration_results WHERE CalEventID=%s",E)
   Tmps= dbGetQuery(con,query)
-  T_mean= mean(Tmps,na.rm=TRUE)
+  T_mean= mean(Tmps$temp,na.rm=TRUE)
+  query=sprintf("UPDATE chrl.calibration_events SET Temp=%s WHERE CalEventID= %s",T_mean,E)
+  #dbSendQuery(con,query)
   
-  query=spritnf("UPDATE chrl.calibration_events SET Temp=%s WHERE CalEventID= %s",T_mean,E)
+  #select all new calibration results 
+  query= sprintf("SELECT CalResultsID, SiteID,Temp FROM chrl.calibration_results WHERE CalEventID=%s",E)
+  CR=dbGetQuery(con,query)
   
+  CR$PeriodID=CF_Summary[CF_Summary$CalEventID==E,'PeriodID']
+  CR$Date=CF_Summary[CF_Summary$CalEventID==E,'Date']
+  
+  CalResults= rbind(CalResults, CR)
 }
+
+##-------------------------------------------------------------------
+##-------Delete discharges that should include new CF values---------
+##-------------------------------------------------------------------
+Unique_periods= unique(CalResults$PeriodID)
+
+# select autosalt events in the barrel period of CF mesaurements
+for (P in Unique_periods){
+  query= sprintf("SELECT EventID, SiteID, Date, Temp FROM chrl.autosalt_summary WHERE PeriodID=%s", P)
+  Events= dbGetQuery(con,query)
+  
+  working= CalResults[CalResults$PeriodID==P,]
+  unique_date= unique(as.Date(working$Date))
+  
+  # Select dump events that happened within in the previous 30 days of CF measurement
+  for (D in unique_date){
+    D=as.Date(D)
+    sub_events= Events[as.Date(Events$date)>(D-30),]
+    sub_working= working[working$Date==D,]
+    
+    # check if dump event and CF measurement temps correspond
+    for (SD in c(1:nrow(sub_events))){
+      TP= sub_events[SD,'temp']
+      Apply= sub_working[sub_working$temp< (TP+5) & subworking$temp>(TP-5),]
+      
+      # delete dump events from database to be recalculated if new CF values
+      # should be incorrperated in calculation
+      if (nrow(Apply)> 0){
+        query= sprintf("DELETE FROM chrl.autosalt_summary WHERE EventID=%s and SiteID=%s"
+                       ,sub_events[SD,'EventID'],sub_events[SD,'SiteID'])
+        dbSendQuery(con,query)
+      }
+    }
+  }
+}
+
+
 
 dbDisconnect(con)
 options(warn = 0)
