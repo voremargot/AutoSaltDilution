@@ -809,19 +809,12 @@ for (S in Stations){
       ST <- EC_curve_results[R,'Starting_Time']
       ET <- EC_curve_results[R,'Ending_Time']
       
-      if(is.na(EC_curve_results[R,"Starting_EC"])==TRUE ){
-        Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
-      } else if  (ST > ET){
-        Stage_Event <- Stage_Subset[Stage_Subset$Sec > 1 & Stage_Subset$Sec < 1000, ]
-      } else {
-        Stage_Event <- Stage_Subset[Stage_Subset$Sec > ST & Stage_Subset$Sec < ET, ]
-      }
-      Stage_Average <- mean(Stage_Event$PLS_Lvl, na.rm=TRUE)
-      Stage_Min <- min(Stage_Event$PLS_Lvl,na.rm=TRUE)
-      Stage_Max <- max(Stage_Event$PLS_Lvl, na.rm=TRUE)
-      Stage_Std <- sd(Stage_Event$PLS_Lvl,na.rm=TRUE)
-      S_Start <- mean(head(Stage_Event$PLS_Lvl,20),na.rm=TRUE)
-      S_End <- mean(tail(Stage_Event$PLS_Lvl,20),na.rm=TRUE)
+      Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+      Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+      Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+      Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+      S_Start <- mean(head(Stage_Subset$PLS_Lvl,6),na.rm=TRUE)
+      S_End <- mean(tail(Stage_Subset$PLS_Lvl,6),na.rm=TRUE)
     
     
     
