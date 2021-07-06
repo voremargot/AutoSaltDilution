@@ -57,7 +57,7 @@ drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(844)
+Stations= c(703)
 for (S in Stations){
   
   ##############################################
@@ -86,7 +86,7 @@ for (S in Stations){
   # Events= unique(Events$eventid)
   
   # New Events --> those that have not yet been processed
-  New_Events<- Dump_Event[Dump_Event$DoseEventID==975031801, ]
+  New_Events<- Dump_Event[Dump_Event$DoseEventID==975027001, ]
   New_Events <- New_Events[which(is.na(New_Events$DoseEventID)==FALSE),]
   
   
@@ -99,7 +99,7 @@ for (S in Stations){
   # Number= sample(1:nrow(New_Events),1)
   
   EID_Array=c(0)
-  for (N in c(1:2)){#c(1:nrow(New_Events))){
+  for (N in c(1)){#c(1:nrow(New_Events))){
     DisSummaryComm <- NA
     
     
@@ -477,6 +477,10 @@ for (S in Stations){
         Ecb <- 'F'
       } else {
         Ecb <- 'C'
+      }
+      
+      if (Ecb!='C'){
+        slope*(Ending_time-Starting_time)
       }
       
     
@@ -1159,7 +1163,7 @@ for (S in Stations){
                   Salt_Volume= Salt_Vol,
                   Discharge_Avg=NA,
                   Uncert=  NA,
-                  Flags=Overall_Flags,
+                  Flags=NA,
                   ECb=ECB_overall,
                   Mixing=NA,
                   Notes= DisSummaryComm)
@@ -1182,7 +1186,7 @@ for (S in Stations){
                 Salt_Volume= Salt_Vol,
                 Discharge_Avg=Average_Discharge,
                 Uncert=  TotalUncert,
-                Flags=Overall_Flags,
+                Flags=NA,
                 ECb=ECB_overall,
                 Mixing=Mixing,
                 Notes= DisSummaryComm)
@@ -1217,7 +1221,7 @@ for (S in Stations){
   ##-------------------------------------------Enter data into database------------------------------------------
   ##-----------------------------------------------------------------------------------------------------------
 
-for (r in c(1:nrow(Discharge_Summary))){
+for (r in c(1:nrow(Discharge_Summary[1,]))){
 
    Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
            Discharge_Summary[r,"EventID"],
