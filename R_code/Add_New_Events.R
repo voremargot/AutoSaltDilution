@@ -97,7 +97,15 @@ for (S in Stations){
   
   EID_Array=c(0)
 
-  for (N in c(1:3)){#c(1:nrow(New_Events))){
+  if (nrow(New_Events)==0){
+	  print("There are no new dump events to record")
+	  print("-------------------------------------------")
+	  print("-------------------------------------------")
+	  quit()
+  }
+
+  
+  for (N in c(1:10)){#c(1:nrow(New_Events))){
     Overall_Flags <- NA
     DisSummaryComm <- NA
     
@@ -202,7 +210,7 @@ for (S in Stations){
         Overall_Flags='AD'
       } else {
         Overall_Flags=append(Overall_Flags,'AD')
-        Overall_Flags <- paste(Overall_Flags, collapse=';')
+        Overall_Flags <- paste(Overall_Flags, collapse=',')
       }
       
       
@@ -223,7 +231,7 @@ for (S in Stations){
           Overall_Flags='AD'
         } else {
           Overall_Flags=append(Overall_Flags,'AD')
-          Overall_Flags <- paste(Overall_Flags, collapse=';')
+          Overall_Flags <- paste(Overall_Flags, collapse=',')
         }
       }
     }  
@@ -252,7 +260,7 @@ for (S in Stations){
         Overall_Flags='AD'
       } else {
         Overall_Flags=append(Overall_Flags,'ND')
-        Overall_Flags <- paste(Overall_Flags, collapse=';')
+        Overall_Flags <- paste(Overall_Flags, collapse=',')
       }
       
       DS= data.frame(EventID=Event_Num, SiteID=S, PeriodID=Period_ID, Date= Date, Temp= Temp, Start_Time=Time, 
@@ -443,7 +451,7 @@ for (S in Stations){
       # Calculating ending time 
       duration <- 2000
       STD_multiplier <- 3
-      Dur <- 950
+      Dur <- 1000
       
       while (duration > Dur){
         STD_multiplier <- STD_multiplier+1
@@ -514,7 +522,22 @@ for (S in Stations){
         Ecb <- 'C'
       }
       
-    
+    if (Ecb!='C'){
+        change_start= summary(lin_model)$coefficients[2]*(Ending_time)+summary(lin_model)$coefficients[1]
+          
+          Stop_condition=NULL
+          if (is.null(Stop_condition)== TRUE){
+            for (i in c(21:nrow(Ending_EC))){
+              V <- mean(Ending_EC[((i-20):i),HED],na.rm=TRUE)
+              if (V<(Starting_ECb+change_start+(Starting_Std_avg*3)) & V>(Starting_ECb+change_start-(Starting_Std_avg*3))){
+                Ending_time= Ending_EC[i,'Sec']
+                Stop_condition='END'
+              } else {
+                
+              }
+            }
+          }
+      } 
       #####################################
       # Checking for spikes in salt wave
       #####################################
@@ -531,7 +554,7 @@ for (S in Stations){
           
           # Check to see if, after a large dip/jump in EC, it rebounds to previous levels
           if (abs(diff_EC) >3){
-            for (j in c(1,2,3,4,5,6,7,8,9,10)){
+            for (j in c(1,2,3,4,5,6)){
               if ((i+j) > nrow(EC_saltwave)){
                 break
               }
@@ -677,7 +700,7 @@ for (S in Stations){
         Overall_Flags=DS_Flag
       } else {
         Overall_Flags=append(Overall_Flags,DS_Flag)
-        Overall_Flags <- paste(Overall_Flags, collapse=';')
+        Overall_Flags <- paste(Overall_Flags, collapse=',')
       }
     } else if (length(unique(EC_curve_results[which(is.na(EC_curve_results$Ecb)==FALSE),'Ecb']))==0){
       ECB_overall <- NA
@@ -1130,7 +1153,7 @@ for (S in Stations){
   ###########################################
   # Look for timing offset between salt waves
   ###########################################
-  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N'),'SensorID'])
+  Probes_low_flag_count= unique(Discharge_Results[which(Discharge_Results$Flag_count <2),'SensorID'])
   if (length(which(is.na(EC_curve_results$Time_Max)==TRUE))< length(EC_curve_results$Time_Max) & (is.na(DS_Flag)==TRUE) & length(Probes_low_flag_count)>1){
     Combo <- combn(EC_curve_results[EC_curve_results$SensorID %in% Probes_low_flag_count,'Time_Max'],2)
     D_Array <- array()
@@ -1146,7 +1169,7 @@ for (S in Stations){
             Overall_Flags='OS'
           } else {
             Overall_Flags=append(Overall_Flags,'OS')
-            Overall_Flags <- paste(Overall_Flags, collapse=';')
+            Overall_Flags <- paste(Overall_Flags, collapse=',')
           }
         }
       } else {
@@ -1155,7 +1178,7 @@ for (S in Stations){
             Overall_Flags='OS'
           } else {
             Overall_Flags=append(Overall_Flags,'OS')
-            Overall_Flags <- paste(Overall_Flags, collapse=';')
+            Overall_Flags <- paste(Overall_Flags, collapse=',')
           }
         }
       }
@@ -1166,15 +1189,15 @@ for (S in Stations){
   # Only summarize values if salt wave has less than 2 flags 
 
 
-  Max_Q <- max(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N') , 'QP'],na.rm=TRUE)
-  Min_Q <- min(Discharge_Results[(Discharge_Results$Flag_count <2 & Discharge_Results$SD=='N'), 'QM'],na.rm=TRUE)
+  Max_Q <- max(Discharge_Results[(Discharge_Results$Flag_count <2)  , 'QP'],na.rm=TRUE)
+  Min_Q <- min(Discharge_Results[(Discharge_Results$Flag_count <2), 'QM'],na.rm=TRUE)
 
-  Average_Discharge <- mean(Discharge_Results[which(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'), 'Discharge'], na.rm=TRUE)
+  Average_Discharge <- mean(Discharge_Results[which(Discharge_Results$Flag_count<2), 'Discharge'], na.rm=TRUE)
   TotalUncert <-  max(((Max_Q-Average_Discharge)/Average_Discharge*100),((Average_Discharge-Min_Q)/Average_Discharge*100))
 
   # Flag which discharge values are part of the average discharge calculation
-  Discharge_Results[(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'Y'
-  Discharge_Results[!(Discharge_Results$Flag_count<2 & Discharge_Results$SD=='N'),'Used'] <- 'N'
+  Discharge_Results[(Discharge_Results$Flag_count<2),'Used'] <- 'Y'
+  Discharge_Results[!(Discharge_Results$Flag_count<2) ,'Used'] <- 'N'
   
   # Determine the mixing
   Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),])
