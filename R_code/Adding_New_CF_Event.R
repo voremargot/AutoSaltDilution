@@ -191,20 +191,54 @@ for (x in c(1:nrow(Uni))){
   Uni[x,'Trials'] <- nrow(R)
 }
 
+
+
 # Insert the data into the database
 for (r in c(1:nrow(Uni))){
-  query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location,Temp) VALUES (%s,%s,'%s','%s',%s,'%s',%s)",
-                   Uni[r,'PeriodID'],
-                   Uni[r,"SiteID"],
-                   Uni[r,"Date"],
-                   Uni[r,"PMP"],
-                   Uni[r,"Trials"],
-                   Uni[r,"Loc"])
-  query <- gsub("\\n\\s+", " ", query)
-  #dbSendQuery(con, query)
+  
+  # Check if there is already data from this event in database
+  query= sprintf("SELECT * FROM chrl.calibration_events WHERE SiteID=%s AND Date='%s'AND PMP='%s' AND Location='%s' AND PeriodID=%s",
+    Uni[r,'SiteID'], Uni[r,'Date'],Uni[r,'PMP'],Uni[r,'Loc'],Uni[r,'PeriodID'])
+  H= dbGetQuery(con,query)
+  if (nrow(H)==0){
+    query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location,Temp) VALUES (%s,%s,'%s','%s',%s,'%s',%s)",
+                     Uni[r,'PeriodID'],
+                     Uni[r,"SiteID"],
+                     Uni[r,"Date"],
+                     Uni[r,"PMP"],
+                     Uni[r,"Trials"],
+                     Uni[r,"Loc"])
+    query <- gsub("\\n\\s+", " ", query)
+    dbSendQuery(con, query)
+  } else {
+    for (h in c(1:nrow(H))){
+      ID= H[h,"caleventid"]
+      query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalEventID=%s", ID)
+      duplicate=dbGetQuery(con,query)
+      
+      Num= CF_Summary[CF_Summary$PMP==H[h,'pmp'] & CF_Summary$PeriodID==H[h,'periodid'] &
+                   CF_Summary$SiteID==H[h,'siteid'] & CF_Summary$Date==H[h,'date'] & 
+                   CF_Summary$Loc==H[h,'location'],'Num']
+      Trials= Uni[Uni$PMP==H[h,'pmp'] & Uni$PeriodID==H[h,'periodid'] &
+                        Uni$SiteID==H[h,'siteid'] & Uni$Date==H[h,'date'] & 
+                        Uni$Loc==H[h,'location'],'Trials']
+      for (N in Num){
+        Val= Sensor_Summary[Sensor_Summary$Num==N,]
+        if (all(round(Val$CF,5) %in% duplicate$cf_value)== TRUE){
+          Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Duplicate'
+        } else {
+          Sensor_Summary[Sensor_Summary$Num==N,'Addition']='New'
+          
+          query <- sprintf("UPDATE chrl.calibration_events SET Trials= %s WHERE  caleventid=%s ", Trials+1, ID)
+          dbSendQuery(con,query)
+        }
+        
+      }
+      
+    }
+  }
 }
-
-
+  
 ##----------------------------------------------------------------------------------------------
 ##------------------- Enter data into the calibration results table----------------------------
 ##---------------------------------------------------------------------------------------------
@@ -237,13 +271,16 @@ for (R in c(1:nrow(Sensor_Summary))){
 # Update the googledriveid table that records which google drive documents have been added
 for (R in c(1:nrow(Events_added))){
   Number <- Events_added[R,'Num']
+  if (all(Sensor_Summary[Sensor_Summary$Num==Number, 'Addition']=='Duplicate')==TRUE){
+    next()
+  }
   query <- sprintf("INSERT INTO chrl.googledriveid (file_name,driveid,date_added,caleventid) VALUES ('%s','%s','%s',%s)",
             Events_added[R,'name'],
             Events_added[R,'id'],
             Events_added[R,'added'],
             CF_Summary[which(CF_Summary$Num==Number),'CalEventID'])
   query <- gsub("\\n\\s+", " ", query)
-  #dbSendQuery(con, query)
+  dbSendQuery(con, query)
 }
 
 # Assing a trial number to each result
@@ -260,6 +297,9 @@ for (f in c(1:nrow(Trial_assignment))){
 # Insert data into the calibration results table
 for (R in c(1:nrow(Sensor_Summary))){
   Number <- Sensor_Summary[R,'Num']
+  if (Sensor_Summary[R,'Addition']=='Duplicate'){
+    next()
+  }
   if (is.null(Sensor_Summary[R,'Flags'])==TRUE){
     Sensor_Summary[R,'Flags'] <- NA
   }
@@ -279,7 +319,7 @@ for (R in c(1:nrow(Sensor_Summary))){
   query <- gsub("\\n\\s+", " ", query)
   query <- gsub('NA',"NULL", query)
   query <- gsub("'NULL'","NULL",query)
-  #dbSendQuery(con, query)
+  dbSendQuery(con, query)
 }
 
 
@@ -291,7 +331,7 @@ for (E in CalE){
   Tmps= dbGetQuery(con,query)
   T_mean= mean(Tmps$temp,na.rm=TRUE)
   query=sprintf("UPDATE chrl.calibration_events SET Temp=%s WHERE CalEventID= %s",T_mean,E)
-  #dbSendQuery(con,query)
+  dbSendQuery(con,query)
   
   #select all new calibration results 
   query= sprintf("SELECT CalResultsID, SiteID,Temp FROM chrl.calibration_results WHERE CalEventID=%s",E)
@@ -337,8 +377,6 @@ for (P in Unique_periods){
     }
   }
 }
-
-
 
 dbDisconnect(con)
 options(warn = 0)
