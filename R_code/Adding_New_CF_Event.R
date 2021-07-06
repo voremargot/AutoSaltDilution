@@ -262,6 +262,8 @@ for (R in c(1:nrow(Sensor_Summary))){
   SensorID <- dbGetQuery(con, query)
   if (nrow(SensorID)==0){
     SensorID <- NA
+    print(sprintf('ERROR: No matching sensor info in database for CF Event at site %s on %s',
+                  CF_Summary[which(CF_Summary$Num==Number), 'SiteID'],CF_Summary[which(CF_Summary$Num==Number), 'Date']))
   } else if (nrow(SensorID)> 1){
     SensorID <- NA
   }
