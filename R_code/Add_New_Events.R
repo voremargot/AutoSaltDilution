@@ -820,6 +820,8 @@ for (S in Stations){
       Stage_Min <- min(Stage_Event$PLS_Lvl,na.rm=TRUE)
       Stage_Max <- max(Stage_Event$PLS_Lvl, na.rm=TRUE)
       Stage_Std <- sd(Stage_Event$PLS_Lvl,na.rm=TRUE)
+      S_Start <- mean(head(Stage_Event$PLS_Lvl,20),na.rm=TRUE)
+      S_End <- mean(tail(Stage_Event$PLS_Lvl,20),na.rm=TRUE)
     
     
     
@@ -831,12 +833,14 @@ for (S in Stations){
         Stage_Min <- NA
         Stage_Max <- NA
         Stage_Dir <- NA
+        S_Start <- NA
+        S_End <- NA
         
-        SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std)
+        SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std, Start= S_Start,End=S_End)
         Stage_Summary <- rbind(Stage_Summary,SS)
         
       } else{
-        SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std)
+        SS <- data.frame(StageAvg= Stage_Average,StageMin=Stage_Min, StageMax=Stage_Max, StageStd=Stage_Std, Start= S_Start,End=S_End)
         Stage_Summary <- rbind(Stage_Summary,SS)
       }
     }
@@ -852,7 +856,7 @@ for (S in Stations){
     
     # Determine how the stage is changing during the dump event
     if (is.na(Stage_Average)==FALSE){
-      Diff= Stage_Start- mean(Stage_Summary$StageAvg, na.rm=TRUE)
+      Diff= mean(Stage_Summary$S_Start,na.rm=TRUE)- mean(Stage_Summary$S_End, na.rm=TRUE)
       if (length(Starting_Stage)==0 | length(Ending_Stage)==0){
         Stage_Dir <- NA
       } else if(Diff< (-0.5) ){
