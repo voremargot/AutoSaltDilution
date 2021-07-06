@@ -83,7 +83,6 @@ for (Sen in Sensors){
 
   Query= sprintf("SELECT * FROM chrl.sensors WHERE SensorID=%i",Sen)
   SensorInfo <- dbGetQuery(con, Query)
-  dbFetch(n=-1)
   ProbeNum=SensorInfo$probe_number
   
   Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
@@ -129,9 +128,9 @@ for (Sen in Sensors){
   
   CFID_subset= All_Dis[which(All_Dis$sensorid==Sen),]
   for (CFID in CFID_subset$cfid){
+    used= CFID_subset[CFID_subset$cfid==CFID,'used']
     Query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalResultsID=%i",CFID)
     CalibrationInfo <- dbGetQuery(con, Query) 
-    dbFetch(n=-1)
     
     CalEventID= CalibrationInfo$caleventid
     CF= CalibrationInfo$cf_value*10^-6
@@ -152,12 +151,12 @@ for (Sen in Sensors){
     Dis <- (Salt_Vol/1000)/ sum(A,na.rm=TRUE)*deltaT
     DisUncer <- (sum(ER,na.rm=TRUE)/sum(A, na.rm=TRUE)*100)+Uncert_dump
     
-    DR <- data.frame(SiteID=SiteID, EventID=EventID, SensorID=Sen, CFID=CFID ,Discharge=Dis, Err=DisUncer, CalEventID=CalEventID,Used='Y' )
+    DR <- data.frame(SiteID=SiteID, EventID=EventID, SensorID=Sen, CFID=CFID ,Discharge=Dis, Err=DisUncer, CalEventID=CalEventID,Used=used )
     Discharge_Results <- rbind(Discharge_Results,DR)
     
   }
 }
-Discharge_Results <- Discharge_Results[which(Discharge_Results$Discharge <100 & is.na(Discharge_Results$Discharge)==FALSE),]
+Discharge_Results <- Discharge_Results[which(Discharge_Results$Discharge <100 & is.na(Discharge_Results$Discharge)==FALSE & Discharge_Results$Used=='Y'),]
 Discharge_Results$AbsErr <- Discharge_Results$Discharge*(Discharge_Results$Err/100)
 Discharge_Results$QP <- Discharge_Results$Discharge+Discharge_Results$AbsErr
 Discharge_Results$QM <- Discharge_Results$Discharge-Discharge_Results$AbsErr
@@ -253,7 +252,7 @@ Query <- gsub("\\n\\s+", " ", Query)
 Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
 dbSendQuery(con, Query)
-dbFetch(n=-1)
+
 
 for (R in c(1:nrow(Discharge_Results))){
   Query= sprintf('UPDATE chrl.all_discharge_calcs SET discharge=%s, uncertainty=%s WHERE eventid=%s AND siteid=%s AND sensorid=%s AND cfid=%s',
@@ -262,7 +261,7 @@ for (R in c(1:nrow(Discharge_Results))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
-  dbFetch(n=-1)
+
 }
 
 for (R in c(1:nrow(Salt_wave_info))){
@@ -272,7 +271,6 @@ for (R in c(1:nrow(Salt_wave_info))){
   Query <- gsub('NA',"NULL", Query)
   Query <- gsub("'NULL'","NULL",Query)
   dbSendQuery(con, Query)
-  dbFetch(n=-1)
 }
 
 
@@ -317,14 +315,14 @@ for (Probe in c(1,2,3,4)){
 setForceFormulaRecalculation(wb,'EC salt waves',TRUE)
 
 saveWorkbook(wb,sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
-drive_upload(media=sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date), overwrite=TRUE)
+drive_upload(media=sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),path=sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s_edited.xlsx',EventID,SiteID,Event_to_edit$date), overwrite=TRUE)
 file.remove(sprintf("working_directory/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date))
 file.remove("working_directory/Event_to_fix.xlsx")
 
-autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx',EventID,SiteID,Event_to_edit$date)),EventID,SiteID,Event_to_edit$date)
+autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprintf('AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s_edited.xlsx',EventID,SiteID,Event_to_edit$date)),EventID,SiteID,Event_to_edit$date)
 Query=sprintf("UPDATE chrl.autosalt_forms SET link='%s' WHERE siteid=%s and EventID=%s",autosalt_file_link,SiteID, EventID)
 dbSendQuery(con,Query)
-dbFetch(n=-1)
+
 
 
 
