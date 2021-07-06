@@ -20,9 +20,9 @@
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
-print(sprintf("Date:%s, Time:%s",Sys.Date(), Sys.Time()))
+print(sprintf("Date and Time:%s", Sys.time()))
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-options(java.parameters <- "-Xmx8g")
+options(java.parameters = "-Xmx8g")
 gg=gc()
 
 suppressMessages(library(googledrive))
@@ -48,7 +48,9 @@ New_Events <- Drive_Sheets[!(Drive_Sheets$id %in% Old_CF_Events$driveid), ]
 
 if (nrow(New_Events)<1){
   print('There are no new CF events to upload')
-  stop()
+  print('----------------------------------------------------')
+  print('----------------------------------------------------')
+  quit()
 }
 
 ##-----------------------------------------------------------------------------------------
@@ -191,7 +193,7 @@ for (x in c(1:nrow(Uni))){
 
 # Insert the data into the database
 for (r in c(1:nrow(Uni))){
-  query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location) VALUES (%s,%s,'%s','%s',%s,'%s')",
+  query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location,Temp) VALUES (%s,%s,'%s','%s',%s,'%s',%s)",
                    Uni[r,'PeriodID'],
                    Uni[r,"SiteID"],
                    Uni[r,"Date"],
@@ -280,8 +282,15 @@ for (R in c(1:nrow(Sensor_Summary))){
   dbSendQuery(con, query)
 }
 
-
-
+CalE= unique(CF_Summary$CalEventID)
+for (E in CalE){
+  query= sprintf("SELECT Temp from chrl.calibration_results WHERE CalEventID=%s",E)
+  Tmps= dbGetQuery(con,query)
+  T_mean= mean(Tmps,na.rm=TRUE)
+  
+  query=spritnf("UPDATE chrl.calibration_events SET Temp=%s WHERE CalEventID= %s",T_mean,E)
+  
+}
 
 dbDisconnect(con)
 options(warn = 0)
