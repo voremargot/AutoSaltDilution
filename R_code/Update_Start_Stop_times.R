@@ -24,9 +24,10 @@
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
+
+options(java.parameters = "-Xmx8g")
 library(DBI)
 library(dplyr)
 library(googledrive)
@@ -323,7 +324,7 @@ autosalt_file_link <- sprintf('<a href=%s>%s.WS%s.%s.xlsx</a>',drive_link(sprint
 Query=sprintf("UPDATE chrl.autosalt_forms SET link='%s' WHERE siteid=%s and EventID=%s",autosalt_file_link,SiteID, EventID)
 dbSendQuery(con,Query)
 
-
+dbDisconnect(con)
 
 
 

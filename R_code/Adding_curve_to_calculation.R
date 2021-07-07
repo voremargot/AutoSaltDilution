@@ -21,15 +21,17 @@
 
 
 ##-----------------------------------------------------------------------------------------------
-## ---------------------------Setting up the workspace------------------------------------------
+## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-
-
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+
+
+options(java.parameters = "-Xmx8g")
 
 library(DBI)
 library(dplyr)
+library(googledrive)
 source("AutoSalt_Functions.R")
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
@@ -117,3 +119,4 @@ Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
 dbSendQuery(con, Query)
 
+dbDisconnect(con)
