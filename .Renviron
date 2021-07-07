@@ -1,0 +1,6 @@
+dbname= 'hakaidev'
+schema='chrl'
+host='db.hakai.org'
+user='**********'
+password='*******'
+email_gdrive= 'EMAIL TO LOG INTO SHARED GOOGLE DRIVE'
