@@ -1,3 +1,4 @@
+#!/usr/bin/Rscript
 ##-----------------------------------------------------------------------------------------------
 # Created by: Margot Vore 
 # May 2021
@@ -22,6 +23,7 @@
 cat("\n")
 print(sprintf("Date and Time:%s", Sys.time()))
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+# readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
@@ -36,6 +38,7 @@ options(warn = - 1)
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+# drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
 
 ##-----------------------------------------------------------------------------------
 ##-------------- Finding CF field sheets that are new to the drive------------------
@@ -201,7 +204,8 @@ for (r in c(1:nrow(Uni))){
     Uni[r,'SiteID'], Uni[r,'Date'],Uni[r,'PMP'],Uni[r,'Loc'],Uni[r,'PeriodID'])
   H= dbGetQuery(con,query)
   if (nrow(H)==0){
-    query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location,Temp) VALUES (%s,%s,'%s','%s',%s,'%s',%s)",
+    print(sprintf("Adding New Event: WTS%s-%s-%s",Uni[r,"SiteID"],Uni[r,"PMP"],Uni[r,"Date"]))
+    query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location) VALUES (%s,%s,'%s','%s',%s,'%s')",
                      Uni[r,'PeriodID'],
                      Uni[r,"SiteID"],
                      Uni[r,"Date"],
@@ -210,6 +214,16 @@ for (r in c(1:nrow(Uni))){
                      Uni[r,"Loc"])
     query <- gsub("\\n\\s+", " ", query)
     dbSendQuery(con, query)
+    
+    Num= CF_Summary[CF_Summary$PMP==Uni[r,"PMP"] & CF_Summary$PeriodID==Uni[r,'PeriodID'] &
+                      CF_Summary$SiteID==Uni[r,"SiteID"] & CF_Summary$Date==Uni[r,"Date"] & 
+                      CF_Summary$Loc==Uni[r,"Loc"],'Num']
+    for (N in Num){
+      Sensor_Summary[Sensor_Summary$Num==N,'Addition']='New'
+    }
+    
+  
+    
   } else {
     for (h in c(1:nrow(H))){
       ID= H[h,"caleventid"]
@@ -227,9 +241,9 @@ for (r in c(1:nrow(Uni))){
         if (all(round(Val$CF,5) %in% duplicate$cf_value)== TRUE){
           Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Duplicate'
         } else {
-          Sensor_Summary[Sensor_Summary$Num==N,'Addition']='New'
+          Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Adding'
           
-          query <- sprintf("UPDATE chrl.calibration_events SET Trials= %s WHERE  caleventid=%s ", Trials+1, ID)
+          query <- sprintf("UPDATE chrl.calibration_events SET Trial= %s WHERE  caleventid=%s ", Trials+1, ID)
           dbSendQuery(con,query)
         }
         
@@ -325,7 +339,7 @@ for (R in c(1:nrow(Sensor_Summary))){
 }
 
 
-# Assign average tempertaure to calibration event table
+# Assign average temperature to calibration event table
 CalE= unique(CF_Summary$CalEventID)
 CalResults=data.frame()
 for (E in CalE){
@@ -360,18 +374,23 @@ for (P in Unique_periods){
   
   # Select dump events that happened within in the previous 30 days of CF measurement
   for (D in unique_date){
-    D=as.Date(D)
+    D=as.Date(D,origin="1970-01-01")
     sub_events= Events[as.Date(Events$date)>(D-30),]
     sub_working= working[working$Date==D,]
     
+    if (nrow(sub_events)==0){
+      next()
+    }
     # check if dump event and CF measurement temps correspond
     for (SD in c(1:nrow(sub_events))){
       TP= sub_events[SD,'temp']
-      Apply= sub_working[sub_working$temp< (TP+5) & subworking$temp>(TP-5),]
+      Apply= sub_working[sub_working$temp< (TP+5) & sub_working$temp>(TP-5),]
       
       # delete dump events from database to be recalculated if new CF values
-      # should be incorrperated in calculation
+      # should be incorporated in calculation
       if (nrow(Apply)> 0){
+        print(sprintf("Dump event %s at %s need to be recalculated with new CF values and has temporarily been deleted",
+                      sub_events[SD,'EventID'], sub_events[SD,'SiteID']))
         query= sprintf("DELETE FROM chrl.autosalt_summary WHERE EventID=%s and SiteID=%s"
                        ,sub_events[SD,'EventID'],sub_events[SD,'SiteID'])
         dbSendQuery(con,query)
