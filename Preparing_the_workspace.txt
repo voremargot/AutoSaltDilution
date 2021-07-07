@@ -1,7 +1,7 @@
 There are several things that need to be done in order to prep your local computer for working with the R scripts:
 1. Set up a .Renviron document (this allows you to access the database)
 	- Download the empty .Reviron document located in this repository 
-	- fill out all fields (for password and username information please contact the system admin)
+	- fill out the username, password, and email fields (for password and username information please contact the system admin)
 	- save this document as .Renviron in a secret location on your computer 
 	
 2. Pull the needed scripts from the R_code folder
@@ -11,15 +11,15 @@ There are several things that need to be done in order to prep your local comput
 	- setwd should be the path to the folder where the code is saved
 	- setRenviron path should be to the location of the.Renviron document
 
-4. Create an empty folder called working_directory in the same folder where the code exists
+4. Create an empty folder called working_directory in the same folder where the code exists (don't forget the _ in the name)
 
 5. Make sure all packages are installed in R 
 	- the R script Packages to Install contains all relavent packages needed. 
 	- XLConnect package on Windows:
-		- When downloading or working with the XLConnect package on windows, if you get an error referring to cat.exe this is referring to the 		common 	linux commmand cat which many windows machines don't have. If you have github desktop installed on your windows machine then cat.exe  		is already install. I installed cat.exe when I installed GitHub desktop on my windows and the cat.exe  file was found in the 		user/me/AppData/local/GitHubDesktop/
+		- When downloading or working with the XLConnect package on windows, if you get an error referring to cat.exe this is referring to the 		common 	linux commmand cat which many windows machines don't have. If you have github desktop installed on your windows machine then cat.exe  		is already install on your machine, you just need to get R to recognize it. I installed cat.exe when I installed GitHub desktop on my windows and the cat.exe  file was found in the user/me/AppData/local/GitHubDesktop/
 		- Once cat.exe is installed figure out where it is the computer and copy the path name	
 		- Add the path to your PATH environment in windows:
-			Advanced System Setting --> Environment variables -->Highlight path under user vaiables and hit edit --> Hit New  and add in the 				path to the cat.exe file --> Hit Okay and save changes
+			Advanced System Setting --> Environment variables -->Highlight path under user variables and hit edit --> Hit New and add in the 				path to the cat.exe file --> Hit Okay and save changes
 		- Restart computer 
 
 Specific to Add_New_Event and Adding_New_CF_Event:
