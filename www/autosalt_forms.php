@@ -47,12 +47,11 @@
                     new IntegerField('docid', true, true, true),
                     new IntegerField('eventid', true),
                     new IntegerField('siteid', true),
-                    new DateField('event_date'),
                     new StringField('link', true),
                     new StringField('checked', true),
                     new StringField('edits_made'),
-                    new StringField('notes')
-                    
+                    new StringField('notes'),
+                    new DateField('event_date')
                 )
             );
         }
@@ -88,12 +87,11 @@
                 new FilterColumn($this->dataset, 'docid', 'docid', 'DocID'),
                 new FilterColumn($this->dataset, 'eventid', 'eventid', 'EventID'),
                 new FilterColumn($this->dataset, 'siteid', 'siteid', 'SiteID'),
-                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date'),
                 new FilterColumn($this->dataset, 'link', 'link', 'Link'),
                 new FilterColumn($this->dataset, 'checked', 'checked', 'Checked'),
                 new FilterColumn($this->dataset, 'edits_made', 'edits_made', 'Edits Made'),
-                new FilterColumn($this->dataset, 'notes', 'notes', 'Notes')
-                
+                new FilterColumn($this->dataset, 'notes', 'notes', 'Notes'),
+                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date')
             );
         }
     
@@ -325,42 +323,6 @@
         protected function AddEditColumns(Grid $grid)
         {
             //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for link field
-            //
-            $editor = new TextAreaEdit('link_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Link', 'link', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
             // Edit column for checked field
             //
             $editor = new ComboBox('checked_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
@@ -392,17 +354,6 @@
             //
             $editor = new TextAreaEdit('notes_edit', 50, 8);
             $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -413,36 +364,6 @@
         protected function AddMultiEditColumns(Grid $grid)
         {
             //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for link field
-            //
-            $editor = new TextAreaEdit('link_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Link', 'link', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
             // Edit column for checked field
             //
             $editor = new ComboBox('checked_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
@@ -470,15 +391,6 @@
             //
             $editor = new TextAreaEdit('notes_edit', 50, 8);
             $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -486,76 +398,7 @@
     
         protected function AddInsertColumns(Grid $grid)
         {
-            //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for link field
-            //
-            $editor = new TextAreaEdit('link_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Link', 'link', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for checked field
-            //
-            $editor = new ComboBox('checked_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Checked', 'checked', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for edits_made field
-            //
-            $editor = new ComboBox('edits_made_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Edits Made', 'edits_made', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for notes field
-            //
-            $editor = new TextAreaEdit('notes_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Notes', 'notes', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
+    
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -859,8 +702,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-	    $this->setDetailedDescription( fread(fopen("HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
-    
+            $this->setDetailedDescription( fread(fopen("HTML/AutoSalt_Forms_Metadata.html",'r'),filesize("HTML/AutoSalt_Forms_Metadata.html")));
     
             return $result;
         }

@@ -47,7 +47,6 @@
                     new IntegerField('waveid', true, true, true),
                     new IntegerField('siteid', true),
                     new IntegerField('eventid', true),
-		    new DateField('event_date'),
                     new IntegerField('sensorid'),
                     new TimeField('start_ecwave'),
                     new TimeField('end_ecwave'),
@@ -57,7 +56,7 @@
                     new IntegerField('peakec'),
                     new StringField('flags'),
                     new StringField('comments'),
-                    
+                    new DateField('event_date')
                 )
             );
             $this->dataset->AddLookupField('sensorid', 'chrl.sensors', new IntegerField('sensorid'), new IntegerField('sensorid', false, false, false, false, 'LA1', 'LT1'), 'LT1');
@@ -94,7 +93,6 @@
                 new FilterColumn($this->dataset, 'waveid', 'waveid', 'WaveID'),
                 new FilterColumn($this->dataset, 'siteid', 'siteid', 'SiteID'),
                 new FilterColumn($this->dataset, 'eventid', 'eventid', 'EventID'),
-                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date'),
                 new FilterColumn($this->dataset, 'sensorid', 'LA1', 'SensorID'),
                 new FilterColumn($this->dataset, 'start_ecwave', 'start_ecwave', 'Start ECwave'),
                 new FilterColumn($this->dataset, 'end_ecwave', 'end_ecwave', 'End ECwave'),
@@ -103,8 +101,8 @@
                 new FilterColumn($this->dataset, 'endingec', 'endingec', 'EndingEC'),
                 new FilterColumn($this->dataset, 'peakec', 'peakec', 'PeakEC'),
                 new FilterColumn($this->dataset, 'flags', 'flags', 'Flags'),
-                new FilterColumn($this->dataset, 'comments', 'comments', 'Comments')
-                
+                new FilterColumn($this->dataset, 'comments', 'comments', 'Comments'),
+                new FilterColumn($this->dataset, 'event_date', 'event_date', 'Event Date')
             );
         }
     
@@ -188,7 +186,7 @@
             $column = new NumberViewColumn('siteid', 'siteid', 'SiteID', $this->dataset);
             $column->SetOrderable(true);
             $column->setNumberAfterDecimal(0);
-            $column->setThousandsSeparator('');
+            $column->setThousandsSeparator(',');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
             $column->SetDescription('FK- Autosalt Summary Table');
@@ -449,128 +447,6 @@
         protected function AddEditColumns(Grid $grid)
         {
             //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for sensorid field
-            //
-            $editor = new ComboBox('sensorid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."sensors"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('sensorid', true, true, true),
-                    new IntegerField('siteid'),
-                    new IntegerField('probe_number'),
-                    new StringField('sensor_type', true),
-                    new StringField('serial_number'),
-                    new StringField('river_loc'),
-                    new DateField('install_date'),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('sensorid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SensorID', 
-                'sensorid', 
-                $editor, 
-                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for start_ecwave field
-            //
-            $editor = new TimeEdit('start_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Start ECwave', 'start_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for end_ecwave field
-            //
-            $editor = new TimeEdit('end_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('End ECwave', 'end_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for time_maxec field
-            //
-            $editor = new TimeEdit('time_maxec_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time MaxEC', 'time_maxec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for startingec field
-            //
-            $editor = new TextEdit('startingec_edit');
-            $editColumn = new CustomEditColumn('StartingEC', 'startingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for endingec field
-            //
-            $editor = new TextEdit('endingec_edit');
-            $editColumn = new CustomEditColumn('EndingEC', 'endingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for peakec field
-            //
-            $editor = new TextEdit('peakec_edit');
-            $editColumn = new CustomEditColumn('PeakEC', 'peakec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
             // Edit column for flags field
             //
             $editor = new TextEdit('flags_edit');
@@ -587,17 +463,6 @@
             //
             $editor = new TextAreaEdit('comments_edit', 50, 8);
             $editColumn = new CustomEditColumn('Comments', 'comments', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -608,110 +473,6 @@
         protected function AddMultiEditColumns(Grid $grid)
         {
             //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for sensorid field
-            //
-            $editor = new ComboBox('sensorid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."sensors"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('sensorid', true, true, true),
-                    new IntegerField('siteid'),
-                    new IntegerField('probe_number'),
-                    new StringField('sensor_type', true),
-                    new StringField('serial_number'),
-                    new StringField('river_loc'),
-                    new DateField('install_date'),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('sensorid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SensorID', 
-                'sensorid', 
-                $editor, 
-                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for start_ecwave field
-            //
-            $editor = new TimeEdit('start_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Start ECwave', 'start_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for end_ecwave field
-            //
-            $editor = new TimeEdit('end_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('End ECwave', 'end_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for time_maxec field
-            //
-            $editor = new TimeEdit('time_maxec_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time MaxEC', 'time_maxec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for startingec field
-            //
-            $editor = new TextEdit('startingec_edit');
-            $editColumn = new CustomEditColumn('StartingEC', 'startingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for endingec field
-            //
-            $editor = new TextEdit('endingec_edit');
-            $editColumn = new CustomEditColumn('EndingEC', 'endingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for peakec field
-            //
-            $editor = new TextEdit('peakec_edit');
-            $editColumn = new CustomEditColumn('PeakEC', 'peakec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
             // Edit column for flags field
             //
             $editor = new TextEdit('flags_edit');
@@ -726,15 +487,6 @@
             //
             $editor = new TextAreaEdit('comments_edit', 50, 8);
             $editColumn = new CustomEditColumn('Comments', 'comments', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -742,137 +494,7 @@
     
         protected function AddInsertColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for eventid field
-            //
-            $editor = new TextEdit('eventid_edit');
-            $editColumn = new CustomEditColumn('EventID', 'eventid', $editor, $this->dataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for sensorid field
-            //
-            $editor = new ComboBox('sensorid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."sensors"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('sensorid', true, true, true),
-                    new IntegerField('siteid'),
-                    new IntegerField('probe_number'),
-                    new StringField('sensor_type', true),
-                    new StringField('serial_number'),
-                    new StringField('river_loc'),
-                    new DateField('install_date'),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('sensorid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SensorID', 
-                'sensorid', 
-                $editor, 
-                $this->dataset, 'sensorid', 'sensorid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for start_ecwave field
-            //
-            $editor = new TimeEdit('start_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Start ECwave', 'start_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for end_ecwave field
-            //
-            $editor = new TimeEdit('end_ecwave_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('End ECwave', 'end_ecwave', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for time_maxec field
-            //
-            $editor = new TimeEdit('time_maxec_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time MaxEC', 'time_maxec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for startingec field
-            //
-            $editor = new TextEdit('startingec_edit');
-            $editColumn = new CustomEditColumn('StartingEC', 'startingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for endingec field
-            //
-            $editor = new TextEdit('endingec_edit');
-            $editColumn = new CustomEditColumn('EndingEC', 'endingec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for peakec field
-            //
-            $editor = new TextEdit('peakec_edit');
-            $editColumn = new CustomEditColumn('PeakEC', 'peakec', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for flags field
-            //
-            $editor = new TextEdit('flags_edit');
-            $editor->SetMaxLength(40);
-            $editColumn = new CustomEditColumn('Flags', 'flags', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for comments field
-            //
-            $editor = new TextAreaEdit('comments_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Comments', 'comments', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for event_date field
-            //
-            $editor = new DateTimeEdit('event_date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Event Date', 'event_date', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
+    
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -1317,8 +939,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-            $this->setDetailedDescription( fread(fopen("HTML/Salt_Waves_Metadata.html",'r'),filesize("HTML/Salt_Waves_Metadata.html")));
-    
+    	    $this->setDetailedDescription( fread(fopen("HTML/Salt_Waves_Metadata.html",'r'),filesize("HTML/Salt_Waves_Metadata.html")));
             return $result;
         }
      
