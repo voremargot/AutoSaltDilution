@@ -933,6 +933,7 @@ for (S in Stations){
     writeWorksheet(wb,Stage_Subset$Sec,sheet= "Stage data",startRow = 6, startCol = 3, header=F)
     
     setForceFormulaRecalculation(wb,'Stage data',TRUE)
+    setForceFormulaRecalculation(wb,'EC salt waves',TRUE)
     
     saveWorkbook(wb,sprintf("working_directory/%s_%s_.xlsx",S,Event_Num))
     
