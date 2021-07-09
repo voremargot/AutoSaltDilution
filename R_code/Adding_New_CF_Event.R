@@ -255,7 +255,8 @@ for (r in c(1:nrow(Uni))){
     }
   }
 }
-  
+ 
+Sensor_Summary=Sensor_Summary[which(Sensor_Summary$Addition!="Duplicate"),]
 ##----------------------------------------------------------------------------------------------
 ##------------------- Enter data into the calibration results table----------------------------
 ##---------------------------------------------------------------------------------------------
@@ -290,7 +291,7 @@ for (R in c(1:nrow(Sensor_Summary))){
   Sensor_Summary[R,'SensorID'] <- SensorID
 }
 
-# Update the googledriveid table that records which google drive documents have been added
+# Update the googledriveid table that records which Google drive documents have been added
 for (R in c(1:nrow(Events_added))){
   Number <- Events_added[R,'Num']
   if (all(Sensor_Summary[Sensor_Summary$Num==Number, 'Addition']=='Duplicate')==TRUE){
@@ -302,7 +303,7 @@ for (R in c(1:nrow(Events_added))){
             Events_added[R,'added'],
             CF_Summary[which(CF_Summary$Num==Number),'CalEventID'])
   query <- gsub("\\n\\s+", " ", query)
-  # dbSendQuery(con, query)
+  dbSendQuery(con, query)
 }
 
 # Assigning a trial number to each result
@@ -311,7 +312,13 @@ Ca=c(0)
 for (f in c(1:nrow(Trial_assignment))){
   ID <- Trial_assignment[f,'CalEventID'] 
   assign <- sum(Ca==ID)+1
-  Trial_assignment[f,'TrialNum'] <- assign
+  if (Trial_assignment[f,"Addition"]=="Adding"){
+    query=sprintf("SELECT trial_number from chrl.calibration_results WHERE CalEventID=%s",ID)
+    trials_thus_far= unique(dbGetQuery(con,query)$trial_number)
+    Trial_assignment[f,'TrialNum']  <- max(trials_thus_far)+1
+  } else {
+    Trial_assignment[f,'TrialNum'] <- assign
+  }
   Ca <- append(Ca,ID)
 }
 
