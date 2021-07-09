@@ -205,7 +205,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('Y-m-d');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('YYYY-MM-DD');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -216,7 +216,7 @@
             $column->SetOrderable(true);
             $column->SetDateTimeFormat('H:i:s');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('Local Time (PST/PDT)');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -443,82 +443,10 @@
         protected function AddEditColumns(Grid $grid)
         {
             //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for date field
-            //
-            $editor = new DateTimeEdit('date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Date', 'date', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for time field
-            //
-            $editor = new TimeEdit('time_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time', 'time', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
             // Edit column for technicians field
             //
             $editor = new TextAreaEdit('technicians_edit', 50, 8);
             $editColumn = new CustomEditColumn('Technicians', 'technicians', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for barrel_fill field
-            //
-            $editor = new ComboBox('barrel_fill_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Barrel Fill', 'barrel_fill', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for cf_collection field
-            //
-            $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for sensor_change field
-            //
-            $editor = new ComboBox('sensor_change_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Sensor Change', 'sensor_change', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -563,28 +491,6 @@
             //
             $editor = new TextAreaEdit('other_edit', 50, 8);
             $editColumn = new CustomEditColumn('Other', 'other', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for upstream_pic field
-            //
-            $editor = new TextEdit('upstream_pic_edit');
-            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for downstream_pic field
-            //
-            $editor = new TextEdit('downstream_pic_edit');
-            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -595,70 +501,10 @@
         protected function AddMultiEditColumns(Grid $grid)
         {
             //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for date field
-            //
-            $editor = new DateTimeEdit('date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Date', 'date', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for time field
-            //
-            $editor = new TimeEdit('time_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time', 'time', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
             // Edit column for technicians field
             //
             $editor = new TextAreaEdit('technicians_edit', 50, 8);
             $editColumn = new CustomEditColumn('Technicians', 'technicians', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for barrel_fill field
-            //
-            $editor = new ComboBox('barrel_fill_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Barrel Fill', 'barrel_fill', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for cf_collection field
-            //
-            $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for sensor_change field
-            //
-            $editor = new ComboBox('sensor_change_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Sensor Change', 'sensor_change', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -695,24 +541,6 @@
             //
             $editor = new TextAreaEdit('other_edit', 50, 8);
             $editColumn = new CustomEditColumn('Other', 'other', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for upstream_pic field
-            //
-            $editor = new TextEdit('upstream_pic_edit');
-            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for downstream_pic field
-            //
-            $editor = new TextEdit('downstream_pic_edit');
-            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -720,128 +548,7 @@
     
         protected function AddInsertColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new TextEdit('siteid_edit');
-            $editColumn = new CustomEditColumn('SiteID', 'siteid', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for date field
-            //
-            $editor = new DateTimeEdit('date_edit', false, 'Y-m-d');
-            $editColumn = new CustomEditColumn('Date', 'date', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for time field
-            //
-            $editor = new TimeEdit('time_edit', 'H:i:s');
-            $editColumn = new CustomEditColumn('Time', 'time', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for technicians field
-            //
-            $editor = new TextAreaEdit('technicians_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Technicians', 'technicians', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for barrel_fill field
-            //
-            $editor = new ComboBox('barrel_fill_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Barrel Fill', 'barrel_fill', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for cf_collection field
-            //
-            $editor = new ComboBox('cf_collection_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('CF Collection', 'cf_collection', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for sensor_change field
-            //
-            $editor = new ComboBox('sensor_change_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $editor->addChoice('Y', 'Y');
-            $editor->addChoice('N', 'N');
-            $editColumn = new CustomEditColumn('Sensor Change', 'sensor_change', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for weather field
-            //
-            $editor = new TextAreaEdit('weather_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Weather', 'weather', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for repairs_adjustments field
-            //
-            $editor = new TextAreaEdit('repairs_adjustments_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Repairs and Adjustments', 'repairs_adjustments', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for todo field
-            //
-            $editor = new TextAreaEdit('todo_edit', 50, 8);
-            $editColumn = new CustomEditColumn('To Dos', 'todo', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for other field
-            //
-            $editor = new TextAreaEdit('other_edit', 50, 8);
-            $editColumn = new CustomEditColumn('Other', 'other', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for upstream_pic field
-            //
-            $editor = new TextEdit('upstream_pic_edit');
-            $editColumn = new CustomEditColumn('Upstream Picture', 'upstream_pic', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for downstream_pic field
-            //
-            $editor = new TextEdit('downstream_pic_edit');
-            $editColumn = new CustomEditColumn('Downstream Picture', 'downstream_pic', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
+    
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -1265,7 +972,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-	    $this->setDetailedDescription( fread(fopen("HTML/Field_Visit_Metadata.html",'r'),filesize("HTML/Field_Visit_Metadata.html")));
+$this->setDetailedDescription( fread(fopen("HTML/Field_Visit_Metadata.html",'r'),filesize("HTML/Field_Visit_Metadata.html")));
     
             return $result;
         }

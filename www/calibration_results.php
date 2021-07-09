@@ -149,16 +149,6 @@
                 $actions->addOperation($operation);
                 $operation->OnShow->AddListener('ShowEditButtonHandler', $this);
             }
-            
-            if ($this->GetSecurityInfo()->HasDeleteGrant())
-            {
-                $operation = new LinkOperation($this->GetLocalizerCaptions()->GetMessageString('Delete'), OPERATION_DELETE, $this->dataset, $grid);
-                $operation->setUseImage(true);
-                $actions->addOperation($operation);
-                $operation->OnShow->AddListener('ShowDeleteButtonHandler', $this);
-                $operation->SetAdditionalAttribute('data-modal-operation', 'delete');
-                $operation->SetAdditionalAttribute('data-delete-handler-name', $this->GetModalGridDeleteHandler());
-            }
         }
     
         protected function AddFieldColumns(Grid $grid, $withDetails = true)
@@ -409,37 +399,6 @@
         protected function AddEditColumns(Grid $grid)
         {
             //
-            // Edit column for caleventid field
-            //
-            $editor = new ComboBox('caleventid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."calibration_events"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('caleventid', true, true, true),
-                    new IntegerField('periodid'),
-                    new IntegerField('siteid'),
-                    new DateField('date', true),
-                    new StringField('pmp', true),
-                    new IntegerField('trial', true),
-                    new StringField('location', true)
-                )
-            );
-            $lookupDataset->setOrderByField('caleventid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'CaleventID', 
-                'caleventid', 
-                $editor, 
-                $this->dataset, 'caleventid', 'caleventid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
             // Edit column for siteid field
             //
             $editor = new TextEdit('siteid_edit');
@@ -565,35 +524,6 @@
         protected function AddMultiEditColumns(Grid $grid)
         {
             //
-            // Edit column for caleventid field
-            //
-            $editor = new ComboBox('caleventid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."calibration_events"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('caleventid', true, true, true),
-                    new IntegerField('periodid'),
-                    new IntegerField('siteid'),
-                    new DateField('date', true),
-                    new StringField('pmp', true),
-                    new IntegerField('trial', true),
-                    new StringField('location', true)
-                )
-            );
-            $lookupDataset->setOrderByField('caleventid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'CaleventID', 
-                'caleventid', 
-                $editor, 
-                $this->dataset, 'caleventid', 'caleventid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
             // Edit column for siteid field
             //
             $editor = new TextEdit('siteid_edit');
@@ -716,7 +646,8 @@
                     new DateField('date', true),
                     new StringField('pmp', true),
                     new IntegerField('trial', true),
-                    new StringField('location', true)
+                    new StringField('location', true),
+                    new IntegerField('temp')
                 )
             );
             $lookupDataset->setOrderByField('caleventid', 'ASC');
@@ -1179,7 +1110,6 @@
         {
             return ;
         }
-        protected function GetEnableModalGridDelete() { return true; }
     
         protected function CreateGrid()
         {
@@ -1234,8 +1164,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 	    $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Results_Metadata.html",'r'),filesize("HTML/Calibration_Results_Metadata.html")));
-    
+ 	    $this->setDetailedDescription( fread(fopen("HTML/Calibration_Results_Metadata.html",'r'),filesize("HTML/Calibration_Results_Metadata.html")));
     
             return $result;
         }

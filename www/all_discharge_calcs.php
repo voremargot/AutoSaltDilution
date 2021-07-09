@@ -140,16 +140,6 @@
                 $actions->addOperation($operation);
                 $operation->OnShow->AddListener('ShowEditButtonHandler', $this);
             }
-            
-            if ($this->GetSecurityInfo()->HasDeleteGrant())
-            {
-                $operation = new LinkOperation($this->GetLocalizerCaptions()->GetMessageString('Delete'), OPERATION_DELETE, $this->dataset, $grid);
-                $operation->setUseImage(true);
-                $actions->addOperation($operation);
-                $operation->OnShow->AddListener('ShowDeleteButtonHandler', $this);
-                $operation->SetAdditionalAttribute('data-modal-operation', 'delete');
-                $operation->SetAdditionalAttribute('data-delete-handler-name', $this->GetModalGridDeleteHandler());
-            }
         }
     
         protected function AddFieldColumns(Grid $grid, $withDetails = true)
@@ -618,7 +608,6 @@
         {
             return ;
         }
-        protected function GetEnableModalGridDelete() { return true; }
     
         protected function CreateGrid()
         {
@@ -673,7 +662,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-	    $this->setDetailedDescription( fread(fopen("HTML/All_Discharge_Metadata.html",'r'),filesize("HTML/All_Discharge_Metadata.html")));
+            $this->setDetailedDescription( fread(fopen("HTML/All_Discharge_Metadata.html",'r'),filesize("HTML/All_Discharge_Metadata.html")));
     
             return $result;
         }

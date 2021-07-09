@@ -210,7 +210,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('L');
+            $column->SetDescription('Liters [L]');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -223,7 +223,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('L');
+            $column->SetDescription('Liters [L]');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -351,43 +351,6 @@
     
         protected function AddEditColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."site_description"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('siteid', true, true),
-                    new DateField('install_date', true),
-                    new IntegerField('lat', true),
-                    new IntegerField('lon', true),
-                    new IntegerField('elevation', true),
-                    new IntegerField('width_d'),
-                    new IntegerField('max_depth_d'),
-                    new IntegerField('width_ec'),
-                    new IntegerField('max_depth_ec'),
-                    new IntegerField('slope'),
-                    new IntegerField('dist_d_ec'),
-                    new StringField('active', true),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SiteID', 
-                'siteid', 
-                $editor, 
-                $this->dataset, 'siteid', 'siteid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
             //
             // Edit column for starting_date field
             //
@@ -534,41 +497,6 @@
     
         protected function AddInsertColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."site_description"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('siteid', true, true),
-                    new DateField('install_date', true),
-                    new IntegerField('lat', true),
-                    new IntegerField('lon', true),
-                    new IntegerField('elevation', true),
-                    new IntegerField('width_d'),
-                    new IntegerField('max_depth_d'),
-                    new IntegerField('width_ec'),
-                    new IntegerField('max_depth_ec'),
-                    new IntegerField('slope'),
-                    new IntegerField('dist_d_ec'),
-                    new StringField('active', true),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SiteID', 
-                'siteid', 
-                $editor, 
-                $this->dataset, 'siteid', 'siteid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
             //
             // Edit column for starting_date field
             //
@@ -969,7 +897,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-	    $this->setDetailedDescription( fread(fopen("HTML/Barrel_Periods_Metadata.html",'r'),filesize("HTML/Barrel_Periods_Metadata.html")));
+            $this->setDetailedDescription( fread(fopen("HTML/Barrel_Periods_Metadata.html",'r'),filesize("HTML/Barrel_Periods_Metadata.html")));
     
             return $result;
         }

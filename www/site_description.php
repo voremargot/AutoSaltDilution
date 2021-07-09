@@ -200,7 +200,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('decimal degrees');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -213,7 +213,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('decimal degrees');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -226,7 +226,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('m asl');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -239,7 +239,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('');
+            $column->SetDescription('m');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -252,7 +252,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-		 $column->SetDescription('');
+            $column->SetDescription('m');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -265,7 +265,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-		 $column->SetDescription('');
+            $column->SetDescription('m');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -278,7 +278,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-		 $column->SetDescription('');
+            $column->SetDescription('m');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -291,7 +291,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-		 $column->SetDescription('');
+            $column->SetDescription('%');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -303,9 +303,9 @@
             $column->setNumberAfterDecimal(2);
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('.');
-            $column->setMinimalVisibility(ColumnVisibility::PHONE); 
-		 $column->SetDescription('');
-           	 $column->SetFixedWidth(null);
+            $column->setMinimalVisibility(ColumnVisibility::PHONE);
+            $column->SetDescription('m');
+            $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
             //
@@ -1355,7 +1355,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
- 		 $this->setDetailedDescription( fread(fopen(			   "HTML/Site_Description_Metadata.html",'r'),filesize("HTML/Site_Description_Metadata.html")));
+	    $this->setDetailedDescription( fread(fopen("HTML/Site_Description_Metadata.html",'r'),filesize("HTML/Site_Description_Metadata.html")));
     
             return $result;
         }

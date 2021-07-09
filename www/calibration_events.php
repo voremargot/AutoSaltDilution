@@ -323,34 +323,6 @@
         protected function AddEditColumns(Grid $grid)
         {
             //
-            // Edit column for periodid field
-            //
-            $editor = new ComboBox('periodid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."barrel_periods"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('periodid', true, true, true),
-                    new IntegerField('siteid'),
-                    new DateField('starting_date'),
-                    new DateField('ending_date')
-                )
-            );
-            $lookupDataset->setOrderByField('periodid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'PeriodID', 
-                'periodid', 
-                $editor, 
-                $this->dataset, 'periodid', 'periodid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
             // Edit column for siteid field
             //
             $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
@@ -455,32 +427,6 @@
     
         protected function AddMultiEditColumns(Grid $grid)
         {
-            //
-            // Edit column for periodid field
-            //
-            $editor = new ComboBox('periodid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."barrel_periods"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('periodid', true, true, true),
-                    new IntegerField('siteid'),
-                    new DateField('starting_date'),
-                    new DateField('ending_date')
-                )
-            );
-            $lookupDataset->setOrderByField('periodid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'PeriodID', 
-                'periodid', 
-                $editor, 
-                $this->dataset, 'periodid', 'periodid', $lookupDataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
             //
             // Edit column for siteid field
             //
@@ -587,7 +533,12 @@
                     new IntegerField('periodid', true, true, true),
                     new IntegerField('siteid'),
                     new DateField('starting_date'),
-                    new DateField('ending_date')
+                    new DateField('ending_date'),
+                    new IntegerField('solution_at_start'),
+                    new IntegerField('solution_at_end'),
+                    new IntegerField('salt_added'),
+                    new IntegerField('salt_remaining_on_site'),
+                    new StringField('notes')
                 )
             );
             $lookupDataset->setOrderByField('periodid', 'ASC');
@@ -989,7 +940,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-            $this->setDetailedDescription( fread(fopen(			   "HTML/Calibration_Event_Metadata.html",'r'),filesize("HTML/Calibration_Event_Metadata.html")));
+ 	    $this->setDetailedDescription( fread(fopen("HTML/Calibration_Event_Metadata.html",'r'),filesize("HTML/Calibration_Event_Metadata.html")));
     
             return $result;
         }

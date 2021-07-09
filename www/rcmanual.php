@@ -132,16 +132,6 @@
                 $actions->addOperation($operation);
                 $operation->OnShow->AddListener('ShowEditButtonHandler', $this);
             }
-            
-            if ($this->GetSecurityInfo()->HasDeleteGrant())
-            {
-                $operation = new LinkOperation($this->GetLocalizerCaptions()->GetMessageString('Delete'), OPERATION_DELETE, $this->dataset, $grid);
-                $operation->setUseImage(true);
-                $actions->addOperation($operation);
-                $operation->OnShow->AddListener('ShowDeleteButtonHandler', $this);
-                $operation->SetAdditionalAttribute('data-modal-operation', 'delete');
-                $operation->SetAdditionalAttribute('data-delete-handler-name', $this->GetModalGridDeleteHandler());
-            }
         }
     
         protected function AddFieldColumns(Grid $grid, $withDetails = true)
@@ -261,355 +251,17 @@
     
         protected function AddEditColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."site_description"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('siteid', true, true),
-                    new DateField('install_date', true),
-                    new IntegerField('lat', true),
-                    new IntegerField('lon', true),
-                    new IntegerField('elevation', true),
-                    new IntegerField('width_d'),
-                    new IntegerField('max_depth_d'),
-                    new IntegerField('width_ec'),
-                    new IntegerField('max_depth_ec'),
-                    new IntegerField('slope'),
-                    new IntegerField('dist_d_ec'),
-                    new StringField('active', true),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SiteID', 
-                'siteid', 
-                $editor, 
-                $this->dataset, 'siteid', 'siteid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for mdisid field
-            //
-            $editor = new ComboBox('mdisid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."manual_discharge"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('mdisid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new DateField('date', true),
-                    new TimeField('time'),
-                    new StringField('instream_loc'),
-                    new IntegerField('stage'),
-                    new IntegerField('discharge', true),
-                    new IntegerField('uncert'),
-                    new StringField('method', true),
-                    new StringField('comment'),
-                    new BlobField('images'),
-                    new StringField('link')
-                )
-            );
-            $lookupDataset->setOrderByField('mdisid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'MDisID', 
-                'mdisid', 
-                $editor, 
-                $this->dataset, 'mdisid', 'mdisid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for rcid field
-            //
-            $editor = new ComboBox('rcid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."rc_summary"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('rcid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new IntegerField('version', true),
-                    new DateField('start_date', true),
-                    new DateField('end_date', true),
-                    new StringField('shift'),
-                    new StringField('notes'),
-                    new StringField('link1'),
-                    new StringField('link2')
-                )
-            );
-            $lookupDataset->setOrderByField('rcid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'RCID', 
-                'rcid', 
-                $editor, 
-                $this->dataset, 'rcid', 'rcid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
-            
-            //
-            // Edit column for eventno field
-            //
-            $editor = new TextEdit('eventno_edit');
-            $editColumn = new CustomEditColumn('EventNo', 'eventno', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $editColumn->setAllowListCellEdit(false);
-            $editColumn->setAllowSingleViewCellEdit(false);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddEditColumn($editColumn);
+    
         }
     
         protected function AddMultiEditColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."site_description"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('siteid', true, true),
-                    new DateField('install_date', true),
-                    new IntegerField('lat', true),
-                    new IntegerField('lon', true),
-                    new IntegerField('elevation', true),
-                    new IntegerField('width_d'),
-                    new IntegerField('max_depth_d'),
-                    new IntegerField('width_ec'),
-                    new IntegerField('max_depth_ec'),
-                    new IntegerField('slope'),
-                    new IntegerField('dist_d_ec'),
-                    new StringField('active', true),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SiteID', 
-                'siteid', 
-                $editor, 
-                $this->dataset, 'siteid', 'siteid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for mdisid field
-            //
-            $editor = new ComboBox('mdisid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."manual_discharge"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('mdisid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new DateField('date', true),
-                    new TimeField('time'),
-                    new StringField('instream_loc'),
-                    new IntegerField('stage'),
-                    new IntegerField('discharge', true),
-                    new IntegerField('uncert'),
-                    new StringField('method', true),
-                    new StringField('comment'),
-                    new BlobField('images'),
-                    new StringField('link')
-                )
-            );
-            $lookupDataset->setOrderByField('mdisid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'MDisID', 
-                'mdisid', 
-                $editor, 
-                $this->dataset, 'mdisid', 'mdisid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for rcid field
-            //
-            $editor = new ComboBox('rcid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."rc_summary"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('rcid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new IntegerField('version', true),
-                    new DateField('start_date', true),
-                    new DateField('end_date', true),
-                    new StringField('shift'),
-                    new StringField('notes'),
-                    new StringField('link1'),
-                    new StringField('link2')
-                )
-            );
-            $lookupDataset->setOrderByField('rcid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'RCID', 
-                'rcid', 
-                $editor, 
-                $this->dataset, 'rcid', 'rcid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
-            
-            //
-            // Edit column for eventno field
-            //
-            $editor = new TextEdit('eventno_edit');
-            $editColumn = new CustomEditColumn('EventNo', 'eventno', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddMultiEditColumn($editColumn);
+    
         }
     
         protected function AddInsertColumns(Grid $grid)
         {
-            //
-            // Edit column for siteid field
-            //
-            $editor = new ComboBox('siteid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."site_description"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('siteid', true, true),
-                    new DateField('install_date', true),
-                    new IntegerField('lat', true),
-                    new IntegerField('lon', true),
-                    new IntegerField('elevation', true),
-                    new IntegerField('width_d'),
-                    new IntegerField('max_depth_d'),
-                    new IntegerField('width_ec'),
-                    new IntegerField('max_depth_ec'),
-                    new IntegerField('slope'),
-                    new IntegerField('dist_d_ec'),
-                    new StringField('active', true),
-                    new DateField('deactivation_date')
-                )
-            );
-            $lookupDataset->setOrderByField('siteid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'SiteID', 
-                'siteid', 
-                $editor, 
-                $this->dataset, 'siteid', 'siteid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for mdisid field
-            //
-            $editor = new ComboBox('mdisid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."manual_discharge"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('mdisid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new DateField('date', true),
-                    new TimeField('time'),
-                    new StringField('instream_loc'),
-                    new IntegerField('stage'),
-                    new IntegerField('discharge', true),
-                    new IntegerField('uncert'),
-                    new StringField('method', true),
-                    new StringField('comment'),
-                    new BlobField('images'),
-                    new StringField('link')
-                )
-            );
-            $lookupDataset->setOrderByField('mdisid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'MDisID', 
-                'mdisid', 
-                $editor, 
-                $this->dataset, 'mdisid', 'mdisid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for rcid field
-            //
-            $editor = new ComboBox('rcid_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
-            $lookupDataset = new TableDataset(
-                PgConnectionFactory::getInstance(),
-                GetConnectionOptions(),
-                '"chrl"."rc_summary"');
-            $lookupDataset->addFields(
-                array(
-                    new IntegerField('rcid', true, true, true),
-                    new IntegerField('siteid', true),
-                    new IntegerField('version', true),
-                    new DateField('start_date', true),
-                    new DateField('end_date', true),
-                    new StringField('shift'),
-                    new StringField('notes'),
-                    new StringField('link1'),
-                    new StringField('link2')
-                )
-            );
-            $lookupDataset->setOrderByField('rcid', 'ASC');
-            $editColumn = new LookUpEditColumn(
-                'RCID', 
-                'rcid', 
-                $editor, 
-                $this->dataset, 'rcid', 'rcid', $lookupDataset);
-            $validator = new RequiredValidator(StringUtils::Format($this->GetLocalizerCaptions()->GetMessageString('RequiredValidationMessage'), $editColumn->GetCaption()));
-            $editor->GetValidatorCollection()->AddValidator($validator);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
-            
-            //
-            // Edit column for eventno field
-            //
-            $editor = new TextEdit('eventno_edit');
-            $editColumn = new CustomEditColumn('EventNo', 'eventno', $editor, $this->dataset);
-            $editColumn->SetAllowSetToNull(true);
-            $this->ApplyCommonColumnEditProperties($editColumn);
-            $grid->AddInsertColumn($editColumn);
+    
             $grid->SetShowAddButton(true && $this->GetSecurityInfo()->HasAddGrant());
         }
     
@@ -789,7 +441,6 @@
         {
             return ;
         }
-        protected function GetEnableModalGridDelete() { return true; }
     
         protected function CreateGrid()
         {
@@ -842,7 +493,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-		 $this->setDetailedDescription( fread(fopen(			   "HTML/RC_Manual_Metadata.html",'r'),filesize("HTML/RC_Manual_Metadata.html")));
+	    $this->setDetailedDescription( fread(fopen("HTML/RC_Manual_Metadata.html",'r'),filesize("HTML/RC_Manual_Metadata.html")));
     
             return $result;
         }
