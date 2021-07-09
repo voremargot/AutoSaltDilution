@@ -123,8 +123,16 @@ for (Sen in Sensors){
   ProbeNum=SensorInfo$probe_number
   
   Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
-  End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+  while (is.na(Start_time)==TRUE){
+    print("No valid start time was entered: Please try again!")
+    Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
+  }
   
+  End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+  while (is.na(End_time)==TRUE){
+    print("No valid end time was entered: Please try again!")
+    End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+  }
   
   
   if (ProbeNum!=1){
