@@ -23,8 +23,8 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+readRenviron() ## <- SET THIS PATH TO BE THE LOCATION OF THE .Renviron DOCUMENT 
+setwd() ## <-  SET THIS PATH TO THE DIRECTORY WHERE THE CODE IS
 
 
 options(java.parameters = "-Xmx8g")
@@ -39,7 +39,15 @@ drive_auth(email=Sys.getenv('email_gdrive'))
 
 # Prompts to define what event you are altering
 EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+while (is.na(EventID)==TRUE){
+  print("You didn't enter an EventID. Please try again!")
+  EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+}
 SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+while (is.na(SiteID)==TRUE){
+  print("You didn't enter an SiteID. Please try again!")
+  SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+}
 
 ##--------------------------------------------------------------------------------------------------
 ##------------------------------ Extracting data from database and Hakai---------------------------
@@ -47,7 +55,35 @@ SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '
 
 # Get info about the event
 Query <- sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
-Event_to_edit <- dbGetQuery(con, Query)
+Event_to_edit <- tryCatch({
+  dbGetQuery(con, Query)
+}, error=function(cond) {
+  NA
+})
+
+while (nrow(Event_to_edit)==0){
+  print("The EventID/SiteID combon you entered does not exist in the database")
+  print("Please recheck your values and try again ")
+  
+  EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+  while (is.na(EventID)==TRUE){
+    print("You didn't enter an EventID. Please try again!")
+    EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+  }
+  SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+  while (is.na(SiteID)==TRUE){
+    print("You didn't enter an SiteID. Please try again!")
+    SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+  }
+  
+  Query <- sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
+  Event_to_edit <- tryCatch({
+    dbGetQuery(con, Query)
+  }, error=function(cond) {
+    NA
+  })
+}
+
 
 #Get info about the sensors that are active during event
 Query <- sprintf("SELECT * FROM chrl.all_discharge_calcs WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
@@ -157,7 +193,7 @@ for (Sen in Sensors){
     
   }
 }
-Discharge_Results <- Discharge_Results[which(Discharge_Results$Discharge <100 & is.na(Discharge_Results$Discharge)==FALSE & Discharge_Results$Used=='Y'),]
+# Discharge_Results <- Discharge_Results[which(Discharge_Results$Discharge <100 & is.na(Discharge_Results$Discharge)==FALSE & Discharge_Results$Used=='Y'),]
 Discharge_Results$AbsErr <- Discharge_Results$Discharge*(Discharge_Results$Err/100)
 Discharge_Results$QP <- Discharge_Results$Discharge+Discharge_Results$AbsErr
 Discharge_Results$QM <- Discharge_Results$Discharge-Discharge_Results$AbsErr
