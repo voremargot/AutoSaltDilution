@@ -23,8 +23,10 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron() ## <- SET THIS PATH TO BE THE LOCATION OF THE .Renviron DOCUMENT 
-setwd() ## <-  SET THIS PATH TO THE DIRECTORY WHERE THE CODE IS
+# readRenviron() ## <- SET THIS PATH TO BE THE LOCATION OF THE .Renviron DOCUMENT 
+readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
+setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+# setwd() ## <-  SET THIS PATH TO THE DIRECTORY WHERE THE CODE IS
 
 
 options(java.parameters = "-Xmx8g")
