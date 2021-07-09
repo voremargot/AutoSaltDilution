@@ -1003,16 +1003,16 @@ for (S in Stations){
     Mi$DaysSince <- abs(Mi$Date-as.Date(Date,"%Y-%m-%d"))
     Mi= Mi[which(Mi$Sensor %in% ActiveSensor$sensorid),]
     for (x in ActiveSensor$sensorid){
-      if (nrow(Mi[Mi$Sensor==x])<4){
+      if (nrow(Mi[Mi$Sensor==x,])<4){
         
         query <- sprintf("SELECT * FROM chrl.sensors WHERE (sensorid=%i)",x)
         Sensor_info <- dbGetQuery(con, query)
         
         Probe_Num <- Sensor_info$probe_number[1]
         
-        More_we_need= 4-nrow(Mi[Mi$Sensor==x])
+        More_we_need= 4-nrow(Mi[Mi$Sensor==x,])
         CFS_we_have= Mi[Mi$Sensor==x,"CFID"]
-        query <- sprintf("SELECT CE.date, CE.periodid, CE.Location,CE.PMP,CR.calresultsID,CR.CalEventID, CR.SiteID, CR.Probe_Num, CR.SensorID, CR.CF_value,CR.Per_Err, CR.Flags
+        query <- sprintf("SELECT CE.date, CE.periodid, CE.Location,CE.PMP,CR.calresultsID,CR.CalEventID, CR.SiteID, CR.SensorID, CR.CF_value,CR.Per_Err, CR.Flags
                          FROM chrl.calibration_events as CE
                          JOIN chrl.calibration_results as CR ON CE.CalEventID= CR.CalEventID WHERE PeriodID=%i AND SensorID=%i",Period_ID,x)
         query=gsub("\\n\\s+", " ", query)
@@ -1020,7 +1020,7 @@ for (S in Stations){
         
         AddingCFS$Days_Diff <- abs(as.Date(AddingCFS$date)-as.Date(Date))
         AddingCFS <- arrange(AddingCFS,Days_Diff)
-        AddingCFS <- AddingCFS[which(AddingCFS$location=='On Site' & is.na(AddingCFS$flags)=TRUE),]
+        AddingCFS <- AddingCFS[which(AddingCFS$location=='On Site' & is.na(AddingCFS$flags)==TRUE),]
         for (g in CFS_we_have){
           AddingCFS <- AddingCFS[!(AddingCFS$calresultsid==g),]
         }
@@ -1030,12 +1030,11 @@ for (S in Stations){
         for  (a in c(1:nrow(AddingCFS))){
           Sensor_ID= AddingCFS[a,'sensorid'] ; Date= AddingCFS[a,'date']
           PMP= AddingCFS[a,'pmp']; CF= AddingCFS[a,'cf_value']; Err= AddingCFS[a,'per_err'];
-          CalEventID= AddingCFS[a,'caleventid']
-          V=data.frame(Sensor= Sensor_ID, CFID= x, Date= Date_Cal, PMP=PMP, 
-                     CF=CF*(10^-6), Err=Per_Err,Probe_Num=Probe_Num, CalEventID= CalEventID)
+          CalEventID= AddingCFS[a,'caleventid']; DaySince= AddingCFS[a,'Days_Diff']
+          V=data.frame(Sensor= Sensor_ID, CFID= AddingCFS[a,'calresultsid'], Date= Date_Cal, PMP=PMP, 
+                       CF=CF*(10^-6), Err=Err,Probe_Num=Probe_Num, CalEventID= CalEventID, DaysSince=DaySince)
           Mi=rbind(Mi,V)
         }
-        
       }
       if (nrow(Mi[Mi$Sensor==x,]) >6){
         sub <- Mi[Mi$Sensor==x,]
