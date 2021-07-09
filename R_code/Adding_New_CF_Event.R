@@ -22,8 +22,8 @@
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
 print(sprintf("Date and Time:%s", Sys.time()))
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-# readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
+# readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
@@ -37,8 +37,8 @@ suppressMessages(library(prodlim))
 options(warn = - 1)  
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
-# drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
+# drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
 
 ##-----------------------------------------------------------------------------------
 ##-------------- Finding CF field sheets that are new to the drive------------------
@@ -227,8 +227,11 @@ for (r in c(1:nrow(Uni))){
   } else {
     for (h in c(1:nrow(H))){
       ID= H[h,"caleventid"]
+      
       query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalEventID=%s", ID)
       duplicate=dbGetQuery(con,query)
+      
+      Num_Trials_Before= max(duplicate$trial_number)
       
       Num= CF_Summary[CF_Summary$PMP==H[h,'pmp'] & CF_Summary$PeriodID==H[h,'periodid'] &
                    CF_Summary$SiteID==H[h,'siteid'] & CF_Summary$Date==H[h,'date'] & 
@@ -243,7 +246,7 @@ for (r in c(1:nrow(Uni))){
         } else {
           Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Adding'
           
-          query <- sprintf("UPDATE chrl.calibration_events SET Trial= %s WHERE  caleventid=%s ", Trials+1, ID)
+          query <- sprintf("UPDATE chrl.calibration_events SET Trial= %s WHERE  caleventid=%s ", (Num_Trials_Before+Trials), ID)
           dbSendQuery(con,query)
         }
         
@@ -259,10 +262,13 @@ for (r in c(1:nrow(Uni))){
 
 # Pull the Calibration Event ID from the newly created records
 for (x in c(1:nrow(CF_Summary))){
-  query <- sprintf("SELECT CalEventID from chrl.calibration_events WHERE SiteID=%s AND Date='%s' AND PMP='%s' AND Location='%s'",
+  query <- sprintf("SELECT CalEventID,Trial from chrl.calibration_events WHERE SiteID=%s AND Date='%s' AND PMP='%s' AND Location='%s'",
                  CF_Summary[x,'SiteID'], CF_Summary[x,'Date'],CF_Summary[x,'PMP'],CF_Summary[x,'Loc'])
-  CF_Summary[x,'CalEventID'] <- dbGetQuery(con, query)
+  V <- dbGetQuery(con, query)
+  CF_Summary[x,'CalEventID'] <- V$caleventid
+  CF_Summary[x,'Trials']<- V$trial
 }
+CF_Summary$Addition=unique(Sensor_Summary$Addition)
 
 # Extract the sensor ID for each calibrated sensor
 for (R in c(1:nrow(Sensor_Summary))){
@@ -296,12 +302,12 @@ for (R in c(1:nrow(Events_added))){
             Events_added[R,'added'],
             CF_Summary[which(CF_Summary$Num==Number),'CalEventID'])
   query <- gsub("\\n\\s+", " ", query)
-  dbSendQuery(con, query)
+  # dbSendQuery(con, query)
 }
 
-# Assing a trial number to each result
-Trial_assignment <- CF_Summary[,c('Num','CalEventID')]
-Ca <- c(0)
+# Assigning a trial number to each result
+Trial_assignment <- CF_Summary[,c('Num','CalEventID','Addition','Trials')]
+Ca=c(0)
 for (f in c(1:nrow(Trial_assignment))){
   ID <- Trial_assignment[f,'CalEventID'] 
   assign <- sum(Ca==ID)+1
