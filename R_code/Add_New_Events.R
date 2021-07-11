@@ -29,13 +29,11 @@
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
 print(sprintf("Date and Time:%s", Sys.time()))
-# readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
+readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
-# setwd("/home/autosalt/AutoSaltDilution/R_code")
-setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 #Libraries
 
@@ -51,8 +49,8 @@ options(warn = - 1)
 
 # Connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-# drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
-drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
+drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+
 
 ## ---------------------------------------------------------------------------------------------
 ## ------------------------------- The code-----------------------------------------------------

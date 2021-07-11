@@ -22,8 +22,7 @@
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
 print(sprintf("Date and Time:%s", Sys.time()))
-# readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-readRenviron("C:/Program Files/R/R-4.1.0/.Renviron")
+readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
@@ -37,8 +36,8 @@ suppressMessages(library(prodlim))
 options(warn = - 1)  
 
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-# drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
-drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/viuhydrositemap-8253404607b2.json")
+drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+
 
 ##-----------------------------------------------------------------------------------
 ##-------------- Finding CF field sheets that are new to the drive------------------
