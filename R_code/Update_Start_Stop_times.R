@@ -40,15 +40,15 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 drive_auth(email=Sys.getenv('email_gdrive'))
 
 # Prompts to define what event you are altering
-EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+{EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))}
 while (is.na(EventID)==TRUE){
   print("You didn't enter an EventID. Please try again!")
-  EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+  {EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))}
 }
-SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+{SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))}
 while (is.na(SiteID)==TRUE){
   print("You didn't enter an SiteID. Please try again!")
-  SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+  {SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))}
 }
 
 ##--------------------------------------------------------------------------------------------------
@@ -67,15 +67,15 @@ while (nrow(Event_to_edit)==0){
   print("The EventID/SiteID combon you entered does not exist in the database")
   print("Please recheck your values and try again ")
   
-  EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+  {EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))}
   while (is.na(EventID)==TRUE){
     print("You didn't enter an EventID. Please try again!")
-    EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
+    {EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))}
   }
-  SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+  {SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))}
   while (is.na(SiteID)==TRUE){
     print("You didn't enter an SiteID. Please try again!")
-    SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))
+    {SiteID= as.numeric(readline(prompt='SiteID where start/stop times are changed: '))}
   }
   
   Query <- sprintf("SELECT * FROM chrl.autosalt_summary WHERE SiteID=%i AND EventID=%i",SiteID, EventID)
@@ -124,16 +124,16 @@ for (Sen in Sensors){
   SensorInfo <- dbGetQuery(con, Query)
   ProbeNum=SensorInfo$probe_number
   
-  Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
+  {Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))}
   while (is.na(Start_time)==TRUE){
     print("No valid start time was entered: Please try again!")
-    Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))
+    {Start_time= as.numeric(readline(prompt=sprintf('New start time for sensor %s (Probe %s) [s]: ',Sen, ProbeNum)))}
   }
   
-  End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+  {End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))}
   while (is.na(End_time)==TRUE){
     print("No valid end time was entered: Please try again!")
-    End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))
+    {End_time= as.numeric(readline(prompt=sprintf('New end time for sensor %s (Probe %s) [s]: ',Sen,  ProbeNum)))}
   }
   
   
