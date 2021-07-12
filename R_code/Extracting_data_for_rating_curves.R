@@ -34,7 +34,7 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ##---------------------------------------------------------------------------------------------
 # Prompts for user to add in needed information
 Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
-Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to  recreate : "))
+Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to recreate: "))
 
 ver=0
 while (ver==0){

@@ -21,7 +21,11 @@
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+Path_RCMetadata="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/working_directory/Metadata_RC_626_V4.csv"
+
+
+options(java.parameters = "-Xmx8g")
+gg=gc()
 
 library(DBI)
 library(curl)
@@ -32,17 +36,30 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ##-------------------------------------------------------------------------------------------------
 ##--------------------- Extracting relavent data from CSV file-------------------------------------
 ##-------------------------------------------------------------------------------------------------
-Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
-Rating_Curve_Version=as.numeric(readline(prompt="The new rating curve's version number: "))
-
-RC= read.csv(sprintf('working_directory/Metadata_RC_%s_V%s.csv',Site,Rating_Curve_Version))
-
-query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s AND Version=%s",Site, (Rating_Curve_Version))
+{Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))}
+query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s",Site)
 Current_RC_version= dbGetQuery(con, query)
-RCID= Current_RC_version$rcid
+while (nrow(Current_RC_version)==0){
+  print("The SiteID you entered was is not valid. Please enter a different value.")
+  {Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))}
+  query= sprintf("SELECT * FROM chrl.RC_summary WHERE SiteID=%s",Site)
+  Current_RC_version= dbGetQuery(con, query)
+}
+
+RC= read.csv(Path_RCMetadata)
+
+Version= max(Current_RC_version$version,na.rm=TRUE)+1
+Max_Date= max(as.Date(RC$Date))
+Min_Date= min(as.Date(RC$Date))
+
+Query= sprintf("INSERT INTO chrl.RC_Summary (SiteID,Version,Start_Date,End_Date) VALUES(%s,%s,'%s','%s')",
+        Site,Version,Max_Date,Min_Date)
+dbSendQuery(con,Query)
+
+RCID= Current_RC_version[which(Current_RC_version$version==Version),"rcid"]
 
 ##-----------------------------------------------------------------------------------------------
-##------------------------Determining which autosalt events were included in  rating curve------
+##------------------------Determining which Autosalt events were included in  rating curve------
 ##-----------------------------------------------------------------------------------------------
 RC_autosalt= RC[which(is.na(RC$EventID)==FALSE & RC$Final_rating_curve=='Y') ,]
 
