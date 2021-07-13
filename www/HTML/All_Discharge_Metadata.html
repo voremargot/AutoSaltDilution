@@ -7,11 +7,13 @@
 <strong><u>EventID:</u></strong> This corresponds to the primary key in the autosalt summary table and identifies which event the discharge calculation  belongs to. <br>
 <strong><u> SiteID:</u></strong> This corresponds to the primary key in the autosalt summary table and identifies which event the discharge calculation  belongs to. <br>
 <strong><u> SensorID: </u></strong> This corresponds to the primary key in the sensors table and identifies which sensor the raw EC data is coming from. <br>
-<strong><u> CFID: </u></strong> This corresponds to the primary key in the calibration results table and identifies which CF value was used in the discharge calculations. <br>
-<ul type='disc'><li>Please note that sensors shown in the calibration result table may not match with the SensorID in this table due to poor record keeping until May 2020.</li></ul>
+<strong><u> CFID: </u></strong> This corresponds to the primary key in the calibration results table and identifies which CF value was used in the discharge calculation. <br>
+<ul type='disc'><li>Please note that sensors shown in the calibration result table may not match with the SensorID in this table due to poor record keeping prior to May 2020.</li></ul>
 <strong><u> Discharge:</u></strong> The calculated discharge value.<br>
 <strong><u> Uncertainty:</u></strong> The uncertainty of the discharge value.<br>
-<strong><u> Used:</u></strong>Indicates if this discharge value used in the calculation of the event's average discharge. <br>
+<strong><u> Used:</u></strong> Indicates if this discharge value is used in the event's average discharge calculation. <br>
+<br> 
+If you need to know how discharge and uncertaintyare determined, please see the Methods Description document in the google drive supporting documents folder.<br>
 <br>
 
 <p style= "text-align: center; text-decoration:underline;font-size:20px">Units of Data</p>
