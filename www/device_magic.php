@@ -250,7 +250,10 @@
             
             if ($this->GetSecurityInfo()->HasEditGrant())
             {
-                $operation = new LinkOperation($this->GetLocalizerCaptions()->GetMessageString('Edit'), OPERATION_EDIT, $this->dataset, $grid);
+                $operation = new AjaxOperation(OPERATION_EDIT,
+                    $this->GetLocalizerCaptions()->GetMessageString('Edit'),
+                    $this->GetLocalizerCaptions()->GetMessageString('Edit'), $this->dataset,
+                    $this->GetGridEditHandler(), $grid, AjaxOperation::INLINE);
                 $operation->setUseImage(true);
                 $actions->addOperation($operation);
                 $operation->OnShow->AddListener('ShowEditButtonHandler', $this);
@@ -1190,7 +1193,517 @@
     
         protected function AddEditColumns(Grid $grid)
         {
-    
+            //
+            // Edit column for submitted field
+            //
+            $editor = new DateTimeEdit('submitted_edit', false, 'Y-m-d H:i:s');
+            $editColumn = new CustomEditColumn('Submitted', 'submitted', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for date_visit field
+            //
+            $editor = new DateTimeEdit('date_visit_edit', false, 'Y-m-d');
+            $editColumn = new CustomEditColumn('Date Visit', 'date_visit', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for time_visit field
+            //
+            $editor = new TimeEdit('time_visit_edit', 'H:i:s');
+            $editColumn = new CustomEditColumn('Time Visit', 'time_visit', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for siteid field
+            //
+            $editor = new TextEdit('siteid_edit');
+            $editColumn = new CustomEditColumn('Siteid', 'siteid', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for technician field
+            //
+            $editor = new TextAreaEdit('technician_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Technician', 'technician', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for technician_other field
+            //
+            $editor = new TextAreaEdit('technician_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Technician Other', 'technician_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for upstream_photo field
+            //
+            $editor = new TextAreaEdit('upstream_photo_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Upstream Photo', 'upstream_photo', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for downstream_photo field
+            //
+            $editor = new TextAreaEdit('downstream_photo_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Downstream Photo', 'downstream_photo', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for barrel_fill field
+            //
+            $editor = new ComboBox('barrel_fill_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
+            $editor->addChoice('yes', 'yes');
+            $editor->addChoice('no', 'no');
+            $editColumn = new CustomEditColumn('Barrel Fill', 'barrel_fill', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for cf_event field
+            //
+            $editor = new ComboBox('cf_event_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
+            $editor->addChoice('yes', 'yes');
+            $editor->addChoice('no', 'no');
+            $editColumn = new CustomEditColumn('Cf Event', 'cf_event', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for ec_sensor_change field
+            //
+            $editor = new ComboBox('ec_sensor_change_edit', $this->GetLocalizerCaptions()->GetMessageString('PleaseSelect'));
+            $editor->addChoice('yes', 'yes');
+            $editor->addChoice('no', 'no');
+            $editColumn = new CustomEditColumn('Ec Sensor Change', 'ec_sensor_change', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for volume_solution field
+            //
+            $editor = new TextEdit('volume_solution_edit');
+            $editColumn = new CustomEditColumn('Volume Solution', 'volume_solution', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_added field
+            //
+            $editor = new TextEdit('salt_added_edit');
+            $editColumn = new CustomEditColumn('Salt Added', 'salt_added', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for water_added field
+            //
+            $editor = new TextEdit('water_added_edit');
+            $editColumn = new CustomEditColumn('Water Added', 'water_added', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for volume_depart field
+            //
+            $editor = new TextEdit('volume_depart_edit');
+            $editColumn = new CustomEditColumn('Volume Depart', 'volume_depart', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for salt_remaining_site field
+            //
+            $editor = new TextEdit('salt_remaining_site_edit');
+            $editColumn = new CustomEditColumn('Salt Remaining Site', 'salt_remaining_site', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for barrel_fill_notes field
+            //
+            $editor = new TextAreaEdit('barrel_fill_notes_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Barrel Fill Notes', 'barrel_fill_notes', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for time_barrel_period field
+            //
+            $editor = new TextAreaEdit('time_barrel_period_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Time Barrel Period', 'time_barrel_period', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for trials_cf field
+            //
+            $editor = new TextAreaEdit('trials_cf_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Trials Cf', 'trials_cf', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for action field
+            //
+            $editor = new TextAreaEdit('action_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Action', 'action', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for reason field
+            //
+            $editor = new TextAreaEdit('reason_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Reason', 'reason', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_removed_type field
+            //
+            $editor = new TextAreaEdit('sen_r_removed_type_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R Removed Type', 'sen_r_removed_type', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_removed_type_other field
+            //
+            $editor = new TextAreaEdit('sen_r_removed_type_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R Removed Type Other', 'sen_r_removed_type_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_removed_sn field
+            //
+            $editor = new TextAreaEdit('sen_r_removed_sn_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R Removed Sn', 'sen_r_removed_sn', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_removed_probenum field
+            //
+            $editor = new TextAreaEdit('sen_r_removed_probenum_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R Removed Probenum', 'sen_r_removed_probenum', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_type field
+            //
+            $editor = new TextAreaEdit('sen_r_new_type_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Type', 'sen_r_new_type', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_type_other field
+            //
+            $editor = new TextAreaEdit('sen_r_new_type_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Type Other', 'sen_r_new_type_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_sn field
+            //
+            $editor = new TextAreaEdit('sen_r_new_sn_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Sn', 'sen_r_new_sn', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_rivloc field
+            //
+            $editor = new TextAreaEdit('sen_r_new_rivloc_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Rivloc', 'sen_r_new_rivloc', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_rivloc_other field
+            //
+            $editor = new TextAreaEdit('sen_r_new_rivloc_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Rivloc Other', 'sen_r_new_rivloc_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_r_new_probenum field
+            //
+            $editor = new TextAreaEdit('sen_r_new_probenum_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen R New Probenum', 'sen_r_new_probenum', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_remove_type field
+            //
+            $editor = new TextAreaEdit('sen_remove_type_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Remove Type', 'sen_remove_type', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_remove_type_other field
+            //
+            $editor = new TextAreaEdit('sen_remove_type_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Remove Type Other', 'sen_remove_type_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_remove_sn field
+            //
+            $editor = new TextAreaEdit('sen_remove_sn_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Remove Sn', 'sen_remove_sn', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_remove_probenum field
+            //
+            $editor = new TextAreaEdit('sen_remove_probenum_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Remove Probenum', 'sen_remove_probenum', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_type field
+            //
+            $editor = new TextAreaEdit('sen_add_type_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Type', 'sen_add_type', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_type_other field
+            //
+            $editor = new TextAreaEdit('sen_add_type_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Type Other', 'sen_add_type_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_sn field
+            //
+            $editor = new TextAreaEdit('sen_add_sn_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Sn', 'sen_add_sn', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_riverloc field
+            //
+            $editor = new TextAreaEdit('sen_add_riverloc_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Riverloc', 'sen_add_riverloc', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_riverloc_other field
+            //
+            $editor = new TextAreaEdit('sen_add_riverloc_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Riverloc Other', 'sen_add_riverloc_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for sen_add_probenum field
+            //
+            $editor = new TextAreaEdit('sen_add_probenum_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sen Add Probenum', 'sen_add_probenum', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes_weather field
+            //
+            $editor = new TextAreaEdit('notes_weather_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes Weather', 'notes_weather', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes_repairs field
+            //
+            $editor = new TextAreaEdit('notes_repairs_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes Repairs', 'notes_repairs', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes_todo field
+            //
+            $editor = new TextAreaEdit('notes_todo_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes Todo', 'notes_todo', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for notes_other field
+            //
+            $editor = new TextAreaEdit('notes_other_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Notes Other', 'notes_other', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
+            
+            //
+            // Edit column for new field
+            //
+            $editor = new TextAreaEdit('new_edit', 50, 8);
+            $editColumn = new CustomEditColumn('New', 'new', $editor, $this->dataset);
+            $editColumn->SetAllowSetToNull(true);
+            $editColumn->setAllowListCellEdit(false);
+            $editColumn->setAllowSingleViewCellEdit(false);
+            $this->ApplyCommonColumnEditProperties($editColumn);
+            $grid->AddEditColumn($editColumn);
         }
     
         protected function AddMultiEditColumns(Grid $grid)
