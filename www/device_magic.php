@@ -3201,7 +3201,7 @@
             $this->setExportOneRecordAvailable(array());
             $this->setOpenExportedPdfInNewTab(false);
             $this->setShowFormErrorsOnTop(true);
-	    $this->setDetailedDescription( fread(fopen("HTML/Sensors_Metadata.html",'r'),filesize("HTML/Device_Magic_Metadata.html")));
+	    $this->setDetailedDescription( fread(fopen("HTML/Device_Magic_Metadata.html",'r'),filesize("HTML/Device_Magic_Metadata.html")));
     
             return $result;
         }
