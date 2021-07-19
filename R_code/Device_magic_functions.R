@@ -1,5 +1,12 @@
 barrel_fill_update <- function (working,S){
   # This function is used for updating the barrel fill periods based on the device magic form used in the field.
+  Warning=NA
+  
+  roundDown <- function(x,to=25)
+  {
+    to*(x%/%to)
+  }
+ 
   
   #subset the data to entries where barrel fill occurred
   ss= working[working$barrel_fill=='yes',]
@@ -7,22 +14,45 @@ barrel_fill_update <- function (working,S){
   #select the barrel period data already in the database
   Old_data= dbGetQuery(con, "SELECT * FROM chrl.barrel_periods")
   
+  Date= as.Date(ss$date_visit)
+  if(nrow(Old_data[which(Old_data$siteid==S & (Old_data$starting_date== Date | Old_data$ending_date== Date)),])>0){
+    Old_Matching_events=Old_data[which(Old_data$siteid==S & (Old_data$starting_date== Date | Old_data$ending_date== Date)),]
+    New_Barrel_data= distinct(ss[,c('siteid','barrel_fill','volume_solution','salt_added','water_added','volume_depart','salt_remaining_site')])
+    
+    for (x in c(1:nrow(New_Barrel_data))){
+    
+      if (Old_Matching_events[Old_Matching_events$ending_date==Date,'solution_at_end']!= roundDown(New_Barrel_data[x,'volume_solution'])){
+        Warning= sprintf("Multiple barrel fills with differing data were recorded on %s at site %s. Please check the field records",Date,S)
+        return(c(0, Warning))
+      } else if (Old_Matching_events[Old_Matching_events$starting_date==Date,'solution_at_start']!= roundDown(New_Barrel_data[x,'volume_depart'])){
+        Warning= sprintf("Multiple barrel fills with differing data were recorded on %s at site %s. Please check the field records",Date,S)
+        return(c(0, Warning))
+      } else if (Old_Matching_events[Old_Matching_events$starting_date==Date,'salt_added']!=New_Barrel_data[x,'salt_added']){
+        Warning= sprintf("Multiple barrel fills with differing data were recorded on %s at site %s. Please check the field records",Date,S)
+        return(c(0, Warning))
+      } else if (Old_Matching_events[Old_Matching_events$starting_date==Date,'salt_remaining_on_site']!=New_Barrel_data[x,'salt_remaining_site']){
+        Warning= sprintf("Multiple barrel fills with differing data were recorded on %s at site %s. Please check the field records",Date,S)
+        return(c(0,Warning))
+      }
+    }
+    
+  } 
   # if there are multiple rows on the same day and same site where barrel fills occurred
   # check to see if those rows hold the same data.
   if (nrow(ss)>1){
     Distin= distinct(ss[,c('siteid','barrel_fill','volume_solution','salt_added','water_added','volume_depart','salt_remaining_site')])
     if (nrow(Distin)>1){
-      print(sprintf("Multiple barrel fills with differing data were recorded on %s at site %s: Please check the field records",Date,S))
-      break()
+      Warning= sprintf("Multiple barrel fills with differing data were recorded on %s at site %s. Please check the field records",Date,S)
+      return (c(0,Warning))
     } else {
       ss=ss[1,]
     }
   }
   
   # extract variables for database
-  Volume_at_start=ss$volume_solution
+  Volume_at_start=roundDown(ss$volume_solution)
   Added_Salt= ss$salt_added
-  Volume_at_depart= ss$volume_depart
+  Volume_at_depart= roundDown(ss$volume_depart)
   Salt_remaining_at_site= ss$salt_remaining_site
   Notes= ss$barrel_fill_notes
   
@@ -42,22 +72,28 @@ barrel_fill_update <- function (working,S){
   query <- gsub('NaN',"NULL",query)
   dbSendQuery(con,query)
   
+  
+return(c(1,Warning))
+  
 }
+
 
 ##---------------------------------------------------------------------------------------------------
 ##---------------------------------------------------------------------------------------------------
 ##---------------------------------------------------------------------------------------------------
-field_visit_update <- funtion (working, S){
+field_visit_update <- function (working, S){
   # Updates the field visit table in the database with data collected on the 
   # device magic form. 
   
+  Old_data= dbGetQuery(con, "SELECT * FROM chrl.field_visits")
+  
   # Get the technicians who were working on the site
   Techs=c()
-  for(x in nrow(working)){
-    Techs=append(Techs,unlist(strsplit(working[x,'technician'],',')))
-    Techs=append(Techs,unlist(strsplit(working[x,'technician_other'],',')))
+  for(x in c(1:nrow(working))){
+    Techs=append(Techs,unlist(strsplit(working[x,'technician'],', ')))
+    Techs=append(Techs,unlist(strsplit(working[x,'technician_other'],', ')))
   }
-  Technicians=paste(unique(Techs[Techs!='Other']),collapse = '; ')
+  Technicians=paste(unique(Techs[Techs!='Other' & is.na(Techs)==FALSE]),collapse = '; ')
   
   
   # did a barrel fill occur during the visit?
@@ -83,10 +119,10 @@ field_visit_update <- funtion (working, S){
   
   # Other variables that are copied to database
   Time= min(format(as.POSIXct(working$time_visit,"%H:%M:%S"),'%H:%M:%S'),na.rm = TRUE)
-  Weather=paste(working[which(is.na(working$notes_weather)==FALSE),'notes_weather'],collapse = '; ')
-  Repairs= paste(working[which(is.na(working$notes_repairs)==FALSE),'notes_repairs'],collapse = '; ')
-  ToDo=paste(working[which(is.na(working$notes_todo)==FALSE),'notes_todo'],collapse = '; ')
-  Other=paste(working[which(is.na(working$notes_other)==FALSE),'notes_other'],collapse = '; ')
+  Weather=trimws(paste(working[which(is.na(working$notes_weather)==FALSE),'notes_weather'],collapse = '; '))
+  Repairs= trimws(paste(working[which(is.na(working$notes_repairs)==FALSE),'notes_repairs'],collapse = '; '))
+  ToDo= trimws(paste(working[which(is.na(working$notes_todo)==FALSE),'notes_todo'],collapse = '; '))
+  Other=trimws(paste(working[which(is.na(working$notes_other)==FALSE),'notes_other'],collapse = '; '))
   
   #the device magic row ID's where the data is found
   DMI= paste(working$dmid,collapse = '; ')
@@ -118,18 +154,22 @@ field_visit_update <- funtion (working, S){
     }
     
     # add in new comments if old records also had values
-    if (is.null(Old_wk$weather)==FALSE){
-      Weather= paste(unique(append(unlist(strsplit(Weather, "; ")),unlist(strsplit(Old_wk$weather, "; ")))), collapse = '; ')
-    }
-    if (is.null(Old_wk$repairs_adjustments)==FALSE){
-      Repairs= paste(unique(append(unlist(strsplit(Repairs, "; ")),unlist(strsplit(Old_wk$repairs_adjustments, "; ")))), collapse = '; ')
-    }
-    if (is.null(Old_wk$todo)==FALSE){
-      ToDo= paste(unique(append(strsplit(unlist(ToDo, "; ")),unlist(strsplit(Old_wk$todo, "; ")))), collapse = '; ')
-    }
-    if (is.null(Old_wk$other)==FALSE){
-      Other=paste(unique(append(unlist(strsplit(Other, "; ")),unlist(strsplit(Old_wk$other, "; ")))), collapse = '; ')
-    }
+  
+    K=unique(append(unlist(strsplit(Weather, "; ")),unlist(strsplit(Old_wk$weather, "; "))))
+    Weather= paste(K[K!='NULL'], collapse = '; ')
+
+    
+    K= unique(append(unlist(strsplit(Repairs, "; ")),unlist(strsplit(Old_wk$repairs_adjustments, "; "))))
+    Repairs= paste(K[K!="NULL"], collapse = '; ')
+    
+    
+    K=unique(append(unlist(strsplit(ToDo, "; ")),unlist(strsplit(Old_wk$todo, "; "))))
+    ToDo= paste(K[K!='NULL'], collapse = '; ')
+    
+
+    K=unique(append(unlist(strsplit(Other, "; ")),unlist(strsplit(Old_wk$other, "; "))))
+    Other=paste(K[K!="NULL"], collapse = '; ')
+
     
     DMI=paste(unique(append(unlist(strsplit(DMI,'; ')),unlist(strsplit(Old_wk$dmid,'; ')))), collapse = '; ')
     
@@ -254,214 +294,248 @@ field_visit_update <- funtion (working, S){
 #----------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 sensor_update <- function (working, S){
+  
+  Replace <- function (data, Old_data) {
+    
+    Empty_string <-  function(x){
+      Vl= which(x=="" | x==" ")
+      if (length(Vl)>0){
+        Out= x[-Vl]
+      } else {
+        Out=x
+      }
+      return(Out)
+    }
+    
+    Warning=NA
+    
+    ss= data[data$action=='Replace',]
+    Removed_type=Empty_string(unlist(strsplit(ss$sen_r_removed_type,',')))
+    if (Removed_type=="Other"){
+      Removed_type=Empty_string(unlist(strsplit(ss$sen_r_removed_type_other,',')))
+    }
+    
+    # removed sensor's serial number
+    Remove_SN=Empty_string( unlist(strsplit(ss$sen_r_removed_sn,',')))
+    
+    #removed sensor's probe number
+    Remove_Probe= as.numeric(Empty_string(unlist(strsplit(ss$sen_r_removed_probenum,','))))
+    
+    # the replacement probe type
+    New_type=Empty_string(unlist(strsplit(ss$sen_r_new_type,',')))
+    if (New_type==" "){
+      New_type=Empty_string(unlist(strsplit(ss$sen_r_new_type_other,',')))
+    }
+    
+    # replacement probe serial number
+    New_SN= Empty_string(unlist(strsplit(ss$sen_r_new_sn,',')))
+    
+    # replacement probe number
+    New_Probe= as.numeric(Empty_string(unlist(strsplit(ss$sen_r_new_probenum,','))))
+    
+    #replacement probe river location
+    New_RL=Empty_string(unlist(strsplit(ss$sen_r_new_rivloc,',')))
+    if (New_RL=='Other'){
+      New_RL=Empty_string(unlist(strsplit(ss$sen_r_new_rivloc_other,',')))
+    }
+    
+    # make sure the probe that you are removing was recording as active in the database
+    wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Removed_type & Old_data$serial_number==Remove_SN),]
+    if (is.na(wk_old$deactivation_date)==FALSE){
+      Warning= sprintf('Sensor %s that you are trying to deactivate has previously been taken out! Please review the field notes.',Remove_SN)
+      return (c(0,Warning))
+    }
+    
+    # make sure the removed probed and replacement probe have the same probe numbers
+    if (New_Probe != Remove_Probe){
+      Warning=sprintf('The probe numbers you are replacing are different (New Probe -> %s, Old Probe -> %s. Please check the data.',New_Probe,Remove_Probe)
+      return(c(0,Warning))
+    }
+    
+    # update the deactivation date of the replaced sensor
+    sensorid_old= wk_old$sensorid
+    query= sprintf("UPDATE chrl.sensors SET deactivation_date='%s' WHERE sensorid=%s", Date,sensorid_old)
+    query <- gsub("\\n\\s+", " ", query)
+    query <- gsub('NA',"NULL", query)
+    query <- gsub("'NULL'","NULL",query)
+    query <- gsub('NaN',"NULL",query)
+    dbSendQuery(con,query)
+    
+    # add a new record for the new sensor that was placed in the stream
+    query= sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
+                         (%s,%s,'%s','%s','%s','%s')", S,New_Probe,New_type,New_SN,New_RL,Date)
+    query <- gsub("\\n\\s+", " ", query)
+    query <- gsub('NA',"NULL", query)
+    query <- gsub("'NULL'","NULL",query)
+    query <- gsub('NaN',"NULL",query)
+    dbSendQuery(con,query)
+    
+    return (c(1, Warning))
+  }
+  
+  Remove <- function(data,Old_data){
+    Warning=NA
+    # sensor type of probe being removed
+    ss=data[data$action=='Remove',]
+    
+    Remove_type= ss$sen_remove_type
+    if (Remove_type=='Other'){
+      Remove_type=ss$sen_remove_type_other
+    }
+    
+    #probe number of sensor removed
+    Remove_Probe= ss$sen_remove_probenum
+    
+    # serial number of removed sensor
+    Remove_SN= ss$sen_remove_probenum
+    
+    # check that the sensor that removed exists in the database
+    old_wk= Old_data[which(Old_data$siteid==S & Old_data$probe_number==Remove_Probe & Old_data$sensor_type== Remove_type & Old_data$serial_number==Remove_SN),]
+    if (nrow(old_wk)==0){
+      Warning=sprintf('The sensor you say was removed (SN=%s) does not exist at site %s. Please review the field data',Remove_SN,S)
+      return(c(0,Warning))
+    }
+    
+    # check if the sensor you removed has previously been deactivated
+    if(is.na(old_wk$deactivation_date)==TRUE){
+      Warning= sprintf('The sensor you are trying to remove (SN=%s) already has been deactivated. Please review the field data',Remove_SN)
+      return(c(0,Warning))
+    }
+    
+    # update the deactivation date of the removed sensor in the database
+    SensorID= old_wk$sensorid
+    query=sprintf("UPDATE chrl.sensors SET deactivation_date= '%s' WHERE sensorid=%s", Date,SensorID)
+    dbSendQuery(con,query) 
+    
+    return(c(1,Warning))
+  }
+  
+  Add  <- function(ss, Old_data){
+    Empty_string <-  function(x){
+      Vl= which(x=="" | x==" ")
+      if (length(Vl)>0){
+        Out= x[-Vl]
+      } else {
+        Out=x
+      }
+      return(Out)
+    }
+    
+    Warning=NA
+    # Added sensor type
+    data=ss[ss$action=='Add',]
+    
+    EvNum= length(Empty_string(unlist(strsplit(data$sen_add_type,', '))))
+    for (x in c(1:EvNum)){
+      Add_Type=Empty_string(unlist(strsplit(data$sen_add_type,', ')))
+      
+      if(Add_Type=='Other'){
+        Add_Type=Empty_string(unlist(strsplit(data$sen_add_type_other,', ')))
+      }
+      
+      # Added sensor probe number
+      Add_Probe= as.numeric(Empty_string(unlist(strsplit(data$sen_add_probenum,', '))))
+      
+      # Added sensor serial number
+      Add_SN= Empty_string(unlist(strsplit(data$sen_add_sn,', ')))
+      
+      # Added sensor river location
+      Add_RiverLoc= Empty_string(unlist(strsplit(data$sen_add_riverloc,', ')))
+      
+      if (Add_RiverLoc=='Other'){
+        Add_RiverLoc=Empty_string(unlist(strsplit(data$sen_add_riverloc_other,', ')))
+      }
+      
+      # double check that this sensor is not already recorded as being active in the database
+      Active_Stations=Old_data[which(Old_data$siteid==S & is.na(Old_data$install_date)==FALSE & is.na(Old_data$deactivation_date)==TRUE),]
+      if (Add_Probe %in% Active_Stations$probe_number){
+        Warning=sprintf('There is already an active sensor with probe number %s. Please review the field data',Add_Probe)
+        return(c(0,Warning))
+      } 
+      
+      # create new record for the added sensor in the database
+      query=sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
+                           (%s,%s,'%s','%s','%s','%s')",S,Add_Probe,trimws(Add_Type),trimws(Add_SN),trimws(Add_RiverLoc),Date)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
+      dbSendQuery(con,query)
+    }
+    return (c(1,Warning))
+    
+  }
+  
+
+  
+  
+  ##------------------------------------------------------------------------------
+  ##-----------------------------------------------------------------------------
   # select subset of visits where sensor change happened
   ss= working[which(working$ec_sensor_change=='yes'),]
   
   # select sensor data already in the database
   Old_data= dbGetQuery(con, "SELECT * FROM chrl.sensors")
   
-  Active_sensors_old=Old_data[is.na(Old_data$deactivation_date)==TRUE & is.na(Old_data$install_date)==FALSE & Old_data$siteid==S,]
-  
-  if (nrow(ss)>1){
-    next()
-  }
   
   # determine which sensor changes actions occurred
   Action= unlist(strsplit(ss$action,','))
   Action= Action[Action!=" "]
+  ss$action=Action 
   
+  Warning= NA
   # for each action the database will change in a different way
+  Res=c(-999); Com=c(); loop=0
   for (x  in c(1:length(Action))){
+    loop=loop+1
     wk_action= Action[x]
     
-#-------------------------------------------------------------------------------------
-    # case where sensor is replaced in the river
-    if (wk_action=='Replace'){
-      
-      # removed sensor type
-      Removed_type=unlist(strsplit(ss$sen_r_removed_type,','))[x]
-      if (Removed_type=="Other"){
-        Removed_type=unlist(strsplit(ss$sen_r_removed_type_other,','))[x]
-      }
-      
-      # removed sensor's serial number
-      Remove_SN= unlist(strsplit(ss$sen_r_removed_sn,','))[x]
-      
-      #removed sensor's probe number
-      Remove_Probe= as.numeric(unlist(strsplit(ss$sen_r_removed_probenum,','))[x])
-      
-      # the replacement probe type
-      New_type=unlist(strsplit(ss$sen_r_new_type,','))[x]
-      if (New_type==" "){
-        New_type=unlist(strsplit(ss$sen_r_new_type_other,','))[x]
-      }
-      
-      # replacement probe serial number
-      New_SN= unlist(strsplit(ss$sen_r_new_sn,','))[x]
-      
-      # replacement probe number
-      New_Probe= as.numeric(unlist(strsplit(ss$sen_r_new_probenum,','))[x])
-      
-      #replacement probe river location
-      New_RL=unlist(strsplit(ss$sen_r_new_rivloc,','))[x]
-      if (New_RL=='Other'){
-        New_RLunlist(strsplit(ss$sen_r_new_rivloc_other,','))[x]
-      }
-      
-      # make sure the probe that you are removing was recording as active in the database
-      wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Removed_type & Old_data$serial_number==Remove_SN),]
-      if (is.na(wk_old$deactivation_date)==FALSE){
-        print('The sensor that you are trying to deactive has previously been taken out! Please review the field  notes')
-        next()
-      }
-      
-      # make sure the removed probed and replacement probe have the same probe numbers
-      if (New_Probe != Remove_Probe){
-        print('The Probe Numbers you are replacing are different. Please check the data')
-        next()
-      }
-      
-      # update the deactivation date of the replaced sensor
-      sensorid_old= wk_old$sensorid
-      query= sprintf("UPDATE chrl.sensors SET deactivation_date='%s' WHERE sensorid=%s", Date,sensorid_old)
-      query <- gsub("\\n\\s+", " ", query)
-      query <- gsub('NA',"NULL", query)
-      query <- gsub("'NULL'","NULL",query)
-      query <- gsub('NaN',"NULL",query)
-      # dbSendQuery(con,query)
-      
-      # add a new record for the new sensor that was placed in the stream
-      query= sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
-                         (%s,%s,'%s','%s','%s','%s')", S,New_Probe,New_type,New_SN,New_RL,Date)
-      query <- gsub("\\n\\s+", " ", query)
-      query <- gsub('NA',"NULL", query)
-      query <- gsub("'NULL'","NULL",query)
-      query <- gsub('NaN',"NULL",query)
-      # dbSendQuery(con,query)
-      
-#----------------------------------------------------------------------------------------    
-      #case where a sensor is removed but not replaced
-    } else if (wk_action=='Remove'){
-      
-      # sensor type of probe being removed
-      Remove_type= ss$sen_remove_type
-      if (Remove_type=='Other'){
-        Remove_type=ss$sen_remove_type_other
-      }
-      
-      #probe number of sensor removed
-      Remove_Probe= ss$sen_remove_probenum
-      
-      # serial number of removed sensor
-      Remove_SN= ss$sen_remove_probenum
-      
-      # check that the sensor that removed exists in the database
-      old_wk= Old_data[which(Old_data$siteid==S & Old_data$probe_number==Remove_Probe & Old_data$sensor_type== Remove_type & Old_data$serial_number==Remove_SN),]
-      if (nrow(old_wk)==0){
-        print('The sensor you say was removed does not exist in the database. Please review the field data')
-        next()
-      }
-      
-      # check if the sensor you removed has previously been deactivated
-      if(is.na(old_wk$deactivation_date)==TRUE){
-        print('The sensor you are trying to remove already has been deactivated. Please review the field data')
-        next()
-      }
-      
-      # update the deactivation date of the removed sensor in the database
-      SensorID= old_wk$sensorid
-      query("UPDATE chrl.sensors SET deactivation_date= '%s' WHERE sensorid=%s", Date,SensorID)
-      # dbSendQuery(con,query)
-      
-#--------------------------------------------------------------------------------------------------------
-      # case where a sensor was added to the network
-    } else if (wk_action=='Add'){
-      
-      # Added sensor type
-      Add_Type= ss$sen_add_type
-      if(Add_Type=='Other'){
-        Add_Type=ss$sen_add_type_other
-      }
-      
-      # Added sensor probe number
-      Add_Probe= ss$sen_add_probenum
-      
-      # Added sensor serial number
-      Add_SN= ss$sen_add_sn
-      
-      # Added sensor river location
-      Add_RiverLoc= ss$sen_add_riverloc
-      if (Add_RiverLoc=='Other'){
-        Add_RiverLoc=ss$sen_add_riverloc_other
-      }
-      
-      # double check that this sensor is not already recorded as being active in the database
-      Active_Stations=Old_data[which(Old_data$siteid==S & is.na(Old_data$install_date)==FALSE & is.na(Old_data$deactivation_date)==TRUE),]
-      if (Add_Probe %in% Active_Stations$probe_number){
-        print('There is already an active sensor with this probe number! Please review the field data.')
-        next()
-      } 
-      
-      # create new record for the added sensor in the database
-      query=sprintf("INSERT INTO chrl.sensors ((siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
-                         (%s,%s,'%s','%s','%s','%s')",S,Add_Probe,Add_Type,Add_SN,Add_RiverLoc,Date)
-      query <- gsub("\\n\\s+", " ", query)
-      query <- gsub('NA',"NULL", query)
-      query <- gsub("'NULL'","NULL",query)
-      query <- gsub('NaN',"NULL",query)
-      # dbSendQuery(con,query)
-      
-#----------------------------------------------------------------------------------------
-      # case where active sensors are rearranged
-    } else if (wk_action=="Arrange"){
-      
-      #serial_number of sensor that was rearranged
-      SN= ss$sen_sw_sn
-      
-      # check that the sensor is active in the database
-      Recorded_Sensor= Old_data[which(Old_data$serial_number==SN & Old_data$siteid==S & is.na(Old_data$deactivation_date)==TRUE),]
-      if (nrow(Recorded_Sensor)==0){
-        print('The sensor doesnt exist in the database. Please check the field note')
-      }
-      
-      # select the senor id assocaited with the serial number
-      sensorid= Recorded_Sensor$sensorid
-      
-      # case where the position of the sensor changes in the riverr
-      if (ss$sen_sw_action=='Position'){
-        
-        # old position in river
-        Old_positon= ss$sen_sw_position_old
-        if (Old_positon=='Other'){
-          Old_postion= ss$sen_sw_position_old_other
-        } 
-        
-        # new position in river
-        New_position=ss$sen_sw_position_new
-        if (New_position=='Other'){
-          New_position=ss$sen_sw_position_new_other
-        }
-        
-        #update the sensors location in the database
-        query= sprintf("UPDATE chrl.sensors SET VALUES river_loc=%s where sensorid=%s",New_position,sensorid)
-        # dbSendQuery(con,query)
-        
-        
-        # case where the probe number is changed
-      } else if (ss$sen_sw_action=='Probe'){
-        # old probe number
-        Old_PN= ss$sen_sw_pn_old
-        
-        #new probe number
-        New_PN=ss$sen_sw_pn_new
-        
-        #update the probe number in the database
-        query= sprintf("UPDATE chrl.sensors SET VALUES probe_number=%s where sensorid=%s",New_PN,sensorid)
-        # dbSendQuery(con,query)
-      }
+    if (nrow(ss[ss$action==wk_action,])>1){
+      next()
     }
     
+    D= ss[ss$action==wk_action,'dmid']
+    # case where sensor is replaced in the river
+    if (wk_action=='Replace'){
+      Num= Replace(ss,Old_data)
+      if (as.numeric(Num[1])==1){
+        Com= append(Com,"Sensor was replaced")
+        query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
+        dbSendQuery(con,query)
+      } else {
+        Com= append(Com,sprintf("Error in sensor replacement: %s",Num[2]))
+        Res= append(Res,0)
+      }
+      
+    } else if (wk_action=='Remove'){
+        Num= Remove(ss, Old_data)
+        if (as.numeric(Num[1])==1){
+          Com=append(Com,"Sensor was removed")
+          query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
+          dbSendQuery(con,query)
+        } else {
+          Com= append(Com,sprintf("Error in sensor removal: %s",Num[2]))
+          Res= append(Res,0)
+        }
+          
+    } else if (wk_action=='Add'){
+          Num= Add(ss, Old_data)
+          if  (as.numeric(Num[1])==1){
+            Com=append(Com,"Sensor was Added")
+            query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
+            dbSendQuery(con,query)
+          } else {
+            Com=append(Com,sprintf("Error in sensor addition: %s",Num[2]))
+            Res= append(Res,0)
+          }
+        }
   }
-}
+  if ((0 %in% Res)==TRUE){
+    return(c(0,Com))
+  } else{
+    return(c(1,Com))
+  }
   
 }
+
+  
