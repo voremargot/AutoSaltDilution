@@ -90,10 +90,10 @@
                     new StringField('notes_repairs'),
                     new StringField('notes_todo'),
                     new StringField('notes_other'),
-                    new StringField('new_visit'),
-                    new StringField('new_barrel'),
-                    new StringField('new_sensor'),
-                    new StringField('new_CF')
+                    new StringField('visit_added'),
+                    new StringField('barrel_added'),
+                    new StringField('sensor_added'),
+                    new StringField('CF_added')
                 )
             );
         }
@@ -172,10 +172,10 @@
                 new FilterColumn($this->dataset, 'notes_repairs', 'notes_repairs', 'Notes Repairs'),
                 new FilterColumn($this->dataset, 'notes_todo', 'notes_todo', 'Notes Todo'),
                 new FilterColumn($this->dataset, 'notes_other', 'notes_other', 'Notes Other'),
-                new FilterColumn($this->dataset, 'new_visit', 'new_visit', 'New Visit'),
-                new FilterColumn($this->dataset, 'new_barrel', 'new_barrel', 'New Barrel'),
-                new FilterColumn($this->dataset, 'new_sensor', 'new_sensor', 'New Sensor'),
-                new FilterColumn($this->dataset, 'new_CF', 'new_CF', 'New CF')
+                new FilterColumn($this->dataset, 'visit_added', 'visit_added', 'Visit Added'),
+                new FilterColumn($this->dataset, 'barrel_added', 'barrel_added', 'Barrel Added'),
+                new FilterColumn($this->dataset, 'sensor_added', 'sensor_added', 'Sensor Added'),
+                new FilterColumn($this->dataset, 'CF_added', 'CF_added', 'CF Added')
             );
         }
     
@@ -228,10 +228,10 @@
                 ->addColumn($columns['notes_repairs'])
                 ->addColumn($columns['notes_todo'])
                 ->addColumn($columns['notes_other'])
-                ->addColumn($columns['new_visit'])
-                ->addColumn($columns['new_barrel'])
-                ->addColumn($columns['new_sensor'])
-                ->addColumn($columns['new_CF']);
+                ->addColumn($columns['visit_added'])
+                ->addColumn($columns['barrel_added'])
+                ->addColumn($columns['sensor_added'])
+                ->addColumn($columns['CF_added']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -796,9 +796,9 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for new_visit field
+            // View column for visit_added field
             //
-            $column = new TextViewColumn('new_visit', 'new_visit', 'New Visit', $this->dataset);
+            $column = new TextViewColumn('visit_added', 'visit_added', 'Visit Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -807,9 +807,9 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for new_barrel field
+            // View column for barrel_added field
             //
-            $column = new TextViewColumn('new_barrel', 'new_barrel', 'New Barrel', $this->dataset);
+            $column = new TextViewColumn('barrel_added', 'barrel_added', 'Barrel Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -818,9 +818,9 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for new_sensor field
+            // View column for sensor_added field
             //
-            $column = new TextViewColumn('new_sensor', 'new_sensor', 'New Sensor', $this->dataset);
+            $column = new TextViewColumn('sensor_added', 'sensor_added', 'Sensor Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -829,9 +829,9 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for new_CF field
+            // View column for CF_added field
             //
-            $column = new TextViewColumn('new_CF', 'new_CF', 'New CF', $this->dataset);
+            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -1222,33 +1222,33 @@
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for new_visit field
+            // View column for visit_added field
             //
-            $column = new TextViewColumn('new_visit', 'new_visit', 'New Visit', $this->dataset);
+            $column = new TextViewColumn('visit_added', 'visit_added', 'Visit Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for new_barrel field
+            // View column for barrel_added field
             //
-            $column = new TextViewColumn('new_barrel', 'new_barrel', 'New Barrel', $this->dataset);
+            $column = new TextViewColumn('barrel_added', 'barrel_added', 'Barrel Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for new_sensor field
+            // View column for sensor_added field
             //
-            $column = new TextViewColumn('new_sensor', 'new_sensor', 'New Sensor', $this->dataset);
+            $column = new TextViewColumn('sensor_added', 'sensor_added', 'Sensor Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for new_CF field
+            // View column for CF_added field
             //
-            $column = new TextViewColumn('new_CF', 'new_CF', 'New CF', $this->dataset);
+            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
@@ -1758,10 +1758,10 @@
             $grid->AddEditColumn($editColumn);
             
             //
-            // Edit column for new_visit field
+            // Edit column for visit_added field
             //
-            $editor = new TextAreaEdit('new_visit_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Visit', 'new_visit', $editor, $this->dataset);
+            $editor = new TextAreaEdit('visit_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Visit Added', 'visit_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -1769,10 +1769,10 @@
             $grid->AddEditColumn($editColumn);
             
             //
-            // Edit column for new_barrel field
+            // Edit column for barrel_added field
             //
-            $editor = new TextAreaEdit('new_barrel_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Barrel', 'new_barrel', $editor, $this->dataset);
+            $editor = new TextAreaEdit('barrel_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Barrel Added', 'barrel_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -1780,10 +1780,10 @@
             $grid->AddEditColumn($editColumn);
             
             //
-            // Edit column for new_sensor field
+            // Edit column for sensor_added field
             //
-            $editor = new TextAreaEdit('new_sensor_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Sensor', 'new_sensor', $editor, $this->dataset);
+            $editor = new TextAreaEdit('sensor_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sensor Added', 'sensor_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -1791,10 +1791,10 @@
             $grid->AddEditColumn($editColumn);
             
             //
-            // Edit column for new_CF field
+            // Edit column for CF_added field
             //
-            $editor = new TextAreaEdit('new_cf_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New CF', 'new_CF', $editor, $this->dataset);
+            $editor = new TextAreaEdit('cf_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -1805,37 +1805,37 @@
         protected function AddMultiEditColumns(Grid $grid)
         {
             //
-            // Edit column for new_visit field
+            // Edit column for visit_added field
             //
-            $editor = new TextAreaEdit('new_visit_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Visit', 'new_visit', $editor, $this->dataset);
+            $editor = new TextAreaEdit('visit_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Visit Added', 'visit_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
             
             //
-            // Edit column for new_barrel field
+            // Edit column for barrel_added field
             //
-            $editor = new TextAreaEdit('new_barrel_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Barrel', 'new_barrel', $editor, $this->dataset);
+            $editor = new TextAreaEdit('barrel_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Barrel Added', 'barrel_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
             
             //
-            // Edit column for new_sensor field
+            // Edit column for sensor_added field
             //
-            $editor = new TextAreaEdit('new_sensor_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Sensor', 'new_sensor', $editor, $this->dataset);
+            $editor = new TextAreaEdit('sensor_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sensor Added', 'sensor_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
             
             //
-            // Edit column for new_CF field
+            // Edit column for CF_added field
             //
-            $editor = new TextAreaEdit('new_cf_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New CF', 'new_CF', $editor, $this->dataset);
+            $editor = new TextAreaEdit('cf_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -1844,37 +1844,37 @@
         protected function AddInsertColumns(Grid $grid)
         {
             //
-            // Edit column for new_visit field
+            // Edit column for visit_added field
             //
-            $editor = new TextAreaEdit('new_visit_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Visit', 'new_visit', $editor, $this->dataset);
+            $editor = new TextAreaEdit('visit_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Visit Added', 'visit_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
             
             //
-            // Edit column for new_barrel field
+            // Edit column for barrel_added field
             //
-            $editor = new TextAreaEdit('new_barrel_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Barrel', 'new_barrel', $editor, $this->dataset);
+            $editor = new TextAreaEdit('barrel_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Barrel Added', 'barrel_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
             
             //
-            // Edit column for new_sensor field
+            // Edit column for sensor_added field
             //
-            $editor = new TextAreaEdit('new_sensor_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New Sensor', 'new_sensor', $editor, $this->dataset);
+            $editor = new TextAreaEdit('sensor_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('Sensor Added', 'sensor_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
             
             //
-            // Edit column for new_CF field
+            // Edit column for CF_added field
             //
-            $editor = new TextAreaEdit('new_cf_edit', 50, 8);
-            $editColumn = new CustomEditColumn('New CF', 'new_CF', $editor, $this->dataset);
+            $editor = new TextAreaEdit('cf_added_edit', 50, 8);
+            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -2268,33 +2268,33 @@
             $grid->AddPrintColumn($column);
             
             //
-            // View column for new_visit field
+            // View column for visit_added field
             //
-            $column = new TextViewColumn('new_visit', 'new_visit', 'New Visit', $this->dataset);
+            $column = new TextViewColumn('visit_added', 'visit_added', 'Visit Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
             
             //
-            // View column for new_barrel field
+            // View column for barrel_added field
             //
-            $column = new TextViewColumn('new_barrel', 'new_barrel', 'New Barrel', $this->dataset);
+            $column = new TextViewColumn('barrel_added', 'barrel_added', 'Barrel Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
             
             //
-            // View column for new_sensor field
+            // View column for sensor_added field
             //
-            $column = new TextViewColumn('new_sensor', 'new_sensor', 'New Sensor', $this->dataset);
+            $column = new TextViewColumn('sensor_added', 'sensor_added', 'Sensor Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
             
             //
-            // View column for new_CF field
+            // View column for CF_added field
             //
-            $column = new TextViewColumn('new_CF', 'new_CF', 'New CF', $this->dataset);
+            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
@@ -2682,33 +2682,33 @@
             $grid->AddExportColumn($column);
             
             //
-            // View column for new_visit field
+            // View column for visit_added field
             //
-            $column = new TextViewColumn('new_visit', 'new_visit', 'New Visit', $this->dataset);
+            $column = new TextViewColumn('visit_added', 'visit_added', 'Visit Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
             
             //
-            // View column for new_barrel field
+            // View column for barrel_added field
             //
-            $column = new TextViewColumn('new_barrel', 'new_barrel', 'New Barrel', $this->dataset);
+            $column = new TextViewColumn('barrel_added', 'barrel_added', 'Barrel Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
             
             //
-            // View column for new_sensor field
+            // View column for sensor_added field
             //
-            $column = new TextViewColumn('new_sensor', 'new_sensor', 'New Sensor', $this->dataset);
+            $column = new TextViewColumn('sensor_added', 'sensor_added', 'Sensor Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
             
             //
-            // View column for new_CF field
+            // View column for CF_added field
             //
-            $column = new TextViewColumn('new_CF', 'new_CF', 'New CF', $this->dataset);
+            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
@@ -3086,33 +3086,33 @@
             $grid->AddCompareColumn($column);
             
             //
-            // View column for new_visit field
+            // View column for visit_added field
             //
-            $column = new TextViewColumn('new_visit', 'new_visit', 'New Visit', $this->dataset);
+            $column = new TextViewColumn('visit_added', 'visit_added', 'Visit Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
             
             //
-            // View column for new_barrel field
+            // View column for barrel_added field
             //
-            $column = new TextViewColumn('new_barrel', 'new_barrel', 'New Barrel', $this->dataset);
+            $column = new TextViewColumn('barrel_added', 'barrel_added', 'Barrel Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
             
             //
-            // View column for new_sensor field
+            // View column for sensor_added field
             //
-            $column = new TextViewColumn('new_sensor', 'new_sensor', 'New Sensor', $this->dataset);
+            $column = new TextViewColumn('sensor_added', 'sensor_added', 'Sensor Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
             
             //
-            // View column for new_CF field
+            // View column for CF_added field
             //
-            $column = new TextViewColumn('new_CF', 'new_CF', 'New CF', $this->dataset);
+            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
