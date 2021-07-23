@@ -93,7 +93,7 @@
                     new StringField('visit_added'),
                     new StringField('barrel_added'),
                     new StringField('sensor_added'),
-                    new StringField('CF_added')
+                    new StringField('cf_added')
                 )
             );
         }
@@ -175,7 +175,7 @@
                 new FilterColumn($this->dataset, 'visit_added', 'visit_added', 'Visit Added'),
                 new FilterColumn($this->dataset, 'barrel_added', 'barrel_added', 'Barrel Added'),
                 new FilterColumn($this->dataset, 'sensor_added', 'sensor_added', 'Sensor Added'),
-                new FilterColumn($this->dataset, 'CF_added', 'CF_added', 'CF Added')
+                new FilterColumn($this->dataset, 'cf_added', 'cf_added', 'Cf Added')
             );
         }
     
@@ -231,7 +231,7 @@
                 ->addColumn($columns['visit_added'])
                 ->addColumn($columns['barrel_added'])
                 ->addColumn($columns['sensor_added'])
-                ->addColumn($columns['CF_added']);
+                ->addColumn($columns['cf_added']);
         }
     
         protected function setupColumnFilter(ColumnFilter $columnFilter)
@@ -420,7 +420,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('mL');
+            $column->SetDescription('L');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -446,7 +446,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('mL');
+            $column->SetDescription('L');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -459,7 +459,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('mL');
+            $column->SetDescription('L');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -829,9 +829,9 @@
             $grid->AddViewColumn($column);
             
             //
-            // View column for CF_added field
+            // View column for cf_added field
             //
-            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
+            $column = new TextViewColumn('cf_added', 'cf_added', 'Cf Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
@@ -1246,9 +1246,9 @@
             $grid->AddSingleRecordViewColumn($column);
             
             //
-            // View column for CF_added field
+            // View column for cf_added field
             //
-            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
+            $column = new TextViewColumn('cf_added', 'cf_added', 'Cf Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddSingleRecordViewColumn($column);
@@ -1791,10 +1791,10 @@
             $grid->AddEditColumn($editColumn);
             
             //
-            // Edit column for CF_added field
+            // Edit column for cf_added field
             //
             $editor = new TextAreaEdit('cf_added_edit', 50, 8);
-            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Cf Added', 'cf_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $editColumn->setAllowListCellEdit(false);
             $editColumn->setAllowSingleViewCellEdit(false);
@@ -1832,10 +1832,10 @@
             $grid->AddMultiEditColumn($editColumn);
             
             //
-            // Edit column for CF_added field
+            // Edit column for cf_added field
             //
             $editor = new TextAreaEdit('cf_added_edit', 50, 8);
-            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Cf Added', 'cf_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddMultiEditColumn($editColumn);
@@ -1871,10 +1871,10 @@
             $grid->AddInsertColumn($editColumn);
             
             //
-            // Edit column for CF_added field
+            // Edit column for cf_added field
             //
             $editor = new TextAreaEdit('cf_added_edit', 50, 8);
-            $editColumn = new CustomEditColumn('CF Added', 'CF_added', $editor, $this->dataset);
+            $editColumn = new CustomEditColumn('Cf Added', 'cf_added', $editor, $this->dataset);
             $editColumn->SetAllowSetToNull(true);
             $this->ApplyCommonColumnEditProperties($editColumn);
             $grid->AddInsertColumn($editColumn);
@@ -2292,9 +2292,9 @@
             $grid->AddPrintColumn($column);
             
             //
-            // View column for CF_added field
+            // View column for cf_added field
             //
-            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
+            $column = new TextViewColumn('cf_added', 'cf_added', 'Cf Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddPrintColumn($column);
@@ -2706,9 +2706,9 @@
             $grid->AddExportColumn($column);
             
             //
-            // View column for CF_added field
+            // View column for cf_added field
             //
-            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
+            $column = new TextViewColumn('cf_added', 'cf_added', 'Cf Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddExportColumn($column);
@@ -3110,9 +3110,9 @@
             $grid->AddCompareColumn($column);
             
             //
-            // View column for CF_added field
+            // View column for cf_added field
             //
-            $column = new TextViewColumn('CF_added', 'CF_added', 'CF Added', $this->dataset);
+            $column = new TextViewColumn('cf_added', 'cf_added', 'Cf Added', $this->dataset);
             $column->SetOrderable(true);
             $column->SetMaxLength(75);
             $grid->AddCompareColumn($column);
