@@ -28,6 +28,8 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 cat("\n")
+print("---------------------------------------------------------")
+print("---------------------------------------------------------")
 print(sprintf("Date and Time:%s", Sys.time()))
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = "-Xmx8g")
@@ -99,14 +101,12 @@ for (S in Stations){
   EID_Array=c(0)
 
   if (nrow(New_Events)==0){
-	  print("There are no new dump events to record")
-	  print("-------------------------------------------")
-	  print("-------------------------------------------")
-	  quit()
+	 print(sprintf("There are no new dump events to record for site %s",S))
+	  next()
   }
 
   
-  for (N in c(1:10)){#c(1:nrow(New_Events))){
+  for (N in c(1:5)){#c(1:nrow(New_Events))){
     Overall_Flags <- NA
     DisSummaryComm <- NA
     
@@ -850,7 +850,7 @@ for (S in Stations){
     
     # Determine how the stage is changing during the dump event
     if (is.na(Stage_Average)==FALSE){
-      Diff= mean(Stage_Summary$S_Start,na.rm=TRUE)- mean(Stage_Summary$S_End, na.rm=TRUE)
+      Diff= mean(Stage_Summary$Start,na.rm=TRUE)- mean(Stage_Summary$End, na.rm=TRUE)
       if (length(Starting_Stage)==0 | length(Ending_Stage)==0){
         Stage_Dir <- NA
       } else if(Diff< (-0.5) ){
@@ -1009,6 +1009,9 @@ for (S in Stations){
         Probe_Num <- Sensor_info$probe_number[1]
         
         More_we_need= 4-nrow(Mi[Mi$Sensor==x,])
+	if (More_we_need ==0){
+          next
+        }
         CFS_we_have= Mi[Mi$Sensor==x,"CFID"]
         query <- sprintf("SELECT CE.date, CE.periodid, CE.Location,CE.PMP,CR.calresultsID,CR.CalEventID, CR.SiteID, CR.SensorID, CR.CF_value,CR.Per_Err, CR.Flags
                          FROM chrl.calibration_events as CE
@@ -1023,10 +1026,14 @@ for (S in Stations){
           AddingCFS <- AddingCFS[!(AddingCFS$calresultsid==g),]
         }
         
-        AddingCFS <-  AddingCFS[1:More_we_need,]
-        
+       
+        if (nrow(AddingCFS[which(is.na(AddingCFS$date)==FALSE),])<1){
+		next
+	}
+	AddingCFS <-  AddingCFS[1:More_we_need,]
+
         for  (a in c(1:nrow(AddingCFS))){
-          Sensor_ID= AddingCFS[a,'sensorid'] ; Date= AddingCFS[a,'date']
+          Sensor_ID= AddingCFS[a,'sensorid']
           PMP= AddingCFS[a,'pmp']; CF= AddingCFS[a,'cf_value']; Err= AddingCFS[a,'per_err'];
           CalEventID= AddingCFS[a,'caleventid']; DaySince= AddingCFS[a,'Days_Diff']
           V=data.frame(Sensor= Sensor_ID, CFID= AddingCFS[a,'calresultsid'], Date= Date_Cal, PMP=PMP, 
@@ -1318,7 +1325,7 @@ for (r in c(1:nrow(Discharge_Summary))){
            Discharge_Summary[r,"EventID"],
            Discharge_Summary[r,"SiteID"],
            Discharge_Summary[r,"PeriodID"],
-           Discharge_Summary[r,'Date'],
+           as.Date( Discharge_Summary[r,'Date']),
            Discharge_Summary[r,"Temp"],
            Discharge_Summary[r,"Start_Time"],
            Discharge_Summary[r,"Stage_DoseRelease"],
