@@ -210,7 +210,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('Liters [L]');
+            $column->SetDescription('L');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             
@@ -223,7 +223,7 @@
             $column->setThousandsSeparator('');
             $column->setDecimalSeparator('');
             $column->setMinimalVisibility(ColumnVisibility::PHONE);
-            $column->SetDescription('Liters [L]');
+            $column->SetDescription('L');
             $column->SetFixedWidth(null);
             $grid->AddViewColumn($column);
             

@@ -807,8 +807,6 @@ for (S in Stations){
     ######################
     Stage_Summary <- data.frame()
     for (R in c(1:nrow(EC_curve_results))){
-      ST <- EC_curve_results[R,'Starting_Time']
-      ET <- EC_curve_results[R,'Ending_Time']
       
       Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
       Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)

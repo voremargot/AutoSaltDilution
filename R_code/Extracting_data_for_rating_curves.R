@@ -18,15 +18,19 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
+#THESE PATHS NEED TO BE UPDATED BY THE USER
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/working_directory")
 
+options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
+
+#load libraries
 library(DBI)
 library(curl)
 library(tidyverse)
 library(RPostgres)
  
+#connect to database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
 ##---------------------------------------------------------------------------------------------
@@ -34,8 +38,9 @@ con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.get
 ##---------------------------------------------------------------------------------------------
 # Prompts for user to add in needed information
 Site=as.numeric(readline(prompt='SiteID that the new rating curve is for: '))
-Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to  recreate : "))
+Rating_Curve_Version=as.numeric(readline(prompt="Rating Curve version number to recreate: "))
 
+#checks that the user has  entered a valid site and rating curve number
 ver=0
 while (ver==0){
   # Get the RCID for the RC user in interested in
@@ -58,7 +63,7 @@ while (ver==0){
   }
 }
 
-
+# End date of data of the rating curve
 EndDate= as.Date(PreviousRC$end_date)
 
 

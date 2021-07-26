@@ -59,7 +59,6 @@ function GetPageGroups()
     $result[] = array('caption' => 'Calibration Factors', 'description' => '');
     $result[] = array('caption' => 'Stream Discharge', 'description' => '');
     $result[] = array('caption' => 'Rating Curve', 'description' => '');
-    $result[] = array('caption' => 'Default', 'description' => '');
     return $result;
 }
 
@@ -80,7 +79,7 @@ function GetPageInfos()
     $result[] = array('caption' => 'Barrel Periods', 'short_caption' => 'Barrel Periods', 'filename' => 'barrel_periods.php', 'name' => 'chrl.barrel_periods', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i>Record of barrel fills at autosalt sites</i>');
     $result[] = array('caption' => 'Sensors', 'short_caption' => 'Sensors', 'filename' => 'sensors.php', 'name' => 'chrl.sensors', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i> Record of sensors deployed at autosalt sites </i>');
     $result[] = array('caption' => 'RC Summary', 'short_caption' => 'RC Summary', 'filename' => 'rc_summary.php', 'name' => 'chrl.rc_summary', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i> General information about rating curve versions </i>');
-    $result[] = array('caption' => 'Device Magic', 'short_caption' => 'Device Magic', 'filename' => 'device_magic.php', 'name' => 'chrl.device_magic', 'group_name' => 'Default', 'add_separator' => false, 'description' => '');
+    $result[] = array('caption' => 'Device Magic', 'short_caption' => 'Device Magic', 'filename' => 'device_magic.php', 'name' => 'chrl.device_magic', 'group_name' => 'General Information', 'add_separator' => false, 'description' => '<i> Raw field visit data from the device magic submissions</i>');
     return $result;
 }
 
