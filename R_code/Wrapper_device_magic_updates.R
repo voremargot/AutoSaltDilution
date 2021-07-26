@@ -184,7 +184,7 @@ if (nrow(Field)==0){
   }
 }
 
-query=sprintf("SELECT DMID FROM chrl.device_magic WHERE date_visit < %s AND visit_added='Yes' AND barrel_added='Yes' AND sensor_added='Yes' AND CF_added='YES'",(Sys.Date()-60))
+query=sprintf("SELECT DMID FROM chrl.device_magic WHERE date_visit < '%s' AND visit_added='Yes' AND barrel_added='Yes' AND sensor_added='Yes' AND CF_added='YES'",(Sys.Date()-60))
 delete_data=dbGetQuery(con,query)
 
 if (nrow(delete_data)>0){
