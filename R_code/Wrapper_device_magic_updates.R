@@ -14,8 +14,12 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
-setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+# readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
+readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+# setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+setwd("/home/autosalt/AutoSaltDilution/R_code")
+
+
 options(java.parameters = "-Xmx8g")
 
 print("-------------------------------------------------")
