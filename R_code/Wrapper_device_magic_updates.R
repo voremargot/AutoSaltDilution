@@ -16,10 +16,10 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 
-# readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-# setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
-setwd("/home/autosalt/AutoSaltDilution/R_code")
+readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
+# readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+# setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 
 options(java.parameters = "-Xmx8g")
@@ -167,7 +167,7 @@ if (nrow(Field)==0){
   }
 }
 
-#delete events from the device magic table that are older than 60 days and have been fully varified
+#delete events from the device magic table that are older than 60 days and have been fully verified
 query=sprintf("SELECT DMID FROM chrl.device_magic WHERE date_visit < '%s' AND visit_added='Yes' AND barrel_added='Yes' AND sensor_added='Yes' AND CF_added='YES'",(Sys.Date()-60))
 delete_data=dbGetQuery(con,query)
 
