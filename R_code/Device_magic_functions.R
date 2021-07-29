@@ -11,6 +11,7 @@ barrel_fill_update <- function (working,S){
   
   Warning=NA
   Duplicate= NA
+  
   #subset the data to entries where barrel fill occurred
   ss= working[working$barrel_fill=='yes',]
   
@@ -20,7 +21,6 @@ barrel_fill_update <- function (working,S){
   Date= as.Date(ss$date_visit)
   
   # check if there is already barrel period data in the database
-  # Used as check to make sure the new data does not differ from previous entries
   if( nrow(Old_data[which(Old_data$siteid==S & (Old_data$starting_date== Date | Old_data$ending_date== Date)),])>0){
     Old_Matching_events=Old_data[which(Old_data$siteid==S & (Old_data$starting_date== Date | Old_data$ending_date== Date)),]
     New_Barrel_data= distinct(ss[,c('siteid','barrel_fill','volume_solution','salt_added','water_added','volume_depart','salt_remaining_site')])
@@ -44,12 +44,13 @@ barrel_fill_update <- function (working,S){
     Duplicate='Yes'
   } 
   
+  #if all data is a duplicate of what is in database, end function
   if (is.na(Duplicate)==FALSE){
     return(c(1,warning))
   }
   
-  # if there are multiple rows on the same day and same site where barrel fills occurred
-  # check to see if those rows hold the same data.
+  # if there are multiple device magic entries for the same visit,  make sure barrel
+  # fill data is the same
   if (nrow(ss)>1){
     Distin= distinct(ss[,c('siteid','barrel_fill','volume_solution','salt_added','water_added','volume_depart','salt_remaining_site')])
     
@@ -70,6 +71,7 @@ barrel_fill_update <- function (working,S){
   Salt_remaining_at_site= ss$salt_remaining_site
   Notes= ss$barrel_fill_notes
   
+  #remove ' from strings
   if (grepl("'", Notes)==TRUE){
     Notes=gsub("'","",Notes)
   }
@@ -95,7 +97,6 @@ return(c(1,Warning))
 }
 
 sensor_update <- function (working, S){
-  
   # function that is used if a sensor was replaced
   Replace <- function (ss_sub, Old_data) {
     ### This function selects the old and new sensors from the device magic form
@@ -720,49 +721,5 @@ field_visit_update <- function (working, S){
   }
 }
 
-CF_event_check <-  function(working, S){
-  Warning= NA
-  
-  PMP= Empty_string(trimws(unlist(strsplit(working$time_barrel_period,','))))
-  PMP=PMP[!(is.na(PMP)==TRUE)]
-  
-  Trials= as.numeric(Empty_string(trimws(unlist(strsplit(working$trials_cf,',')))))
-  Trials= Trials[!(is.na(Trials)==TRUE)]
-  
-  query= sprintf("Select * from chrl.calibration_events  WHERE SiteID=%s AND Date='%s'",S,Date)
-  CF= dbGetQuery(con,query)
-  
-  if (nrow(CF)==0){
-    Warning= sprintf('No CF sheets have been uploaded from the field visit at site %s on %s. Please upload all sheets.',S,Date)
-    return(c(0, Warning))
-  }
-  
-  if(any(working$barrel_fill=='yes')){
-    if ('Mid' %in% PMP){
-      Warning= sprintf("As there was a barrel fill on %s at site %s, a Mid CF event should not have taken place. Please  review the CF sheets and device magic note",Date, S)
-      return(c(0, Warning))
-    } 
-  }
-  
-  if (setequal(PMP,CF$pmp)==TRUE & (length(PMP)==length(CF$pmp))){
-    for (x in c(1:length(PMP))){
-      P= PMP[x]
-      Tr= Trials[x]
-      if (Tr!=CF[CF$pmp==P,'trial']){
-        if (Tr >CF[CF$pmp==P,'trial']){
-          Warning= sprintf("Trial numbers don't match! Its likely not all CF sheets for %s test at site %s on %s have been uploaded to google drive. Please finish uploading the field sheets.",P,S,Date)
-          return(c(0, Warning))
-        } else {
-          Warning= sprintf("Trial numbers don't match! There are more CF sheets uploaded for %s test at site %s on %s than were expected. Please review the database and CF sheets to correct the error.",P,S,Date)
-          return(c(0, Warning))
-        }
-      }
-    } 
-  } else {
-    Warning= paste(c("The CF table shows",CF$pmp, " measurements and the device magic forms show",PMP,". Please determine the correct CF measurements"),collapse=" ")
-    return(c(0, Warning))
-  }
-  
-return(c(1,Warning))
-}
+
   

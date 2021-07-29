@@ -55,7 +55,7 @@ con <<- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.ge
 ##-----------------------------------------------------------------------------------------------------------------------
 
 #pull any entries from device magic table where at least one of the verification columns is no
-query= "SELECT * FROM chrl.Device_Magic WHERE visit_added='No' OR barrel_added='No' OR sensor_added='No' OR CF_added='No' "
+query= "SELECT * FROM chrl.Device_Magic WHERE visit_added='No' OR barrel_added='No' OR sensor_added='No'"
 Field= dbGetQuery(con, query)
 
 # check if there are any field visits that have happened
@@ -139,38 +139,7 @@ if (nrow(Field)==0){
         }
       }
       
-      ##-------------------------------------------------------------------------------
-      ##-------------------------------------------------------------------------------
-      # do a check of the CF event table to make sure all documents have been uploaded and filled 
-      # out correctly
-      if (any(working$cf_event=='yes' & working$cf_added=='No')==TRUE){
-        #run CF event check function
-        Num= CF_event_check(working, S)
-        
-        # prints the code ran successfully with no errors
-        if (as.numeric(Num[1])==1){
-          print("CF events were succesfully varified")
-          
-          #updates device magic table if CF information matches the device magic inputs
-          for (D in DMI){
-            query= sprintf("UPDATE chrl.device_magic SET cf_added='Yes' WHERE dmid=%s",D)
-            dbSendQuery(con,query)
-          }
-        } else {
-          # if the CF values in the CF event tables do not correspond with what the 
-          # device magic tables says, then print the problems for the log
-          print(sprintf("Error in validating CF values- %s",Num[2]))
-        }
-        Results=append(Results,as.numeric(Num[1]))
-        
-      } else {
-        # if a CF event didn't occur, mark the device magic table as checked
-        for (D in DMI){
-          query= sprintf("UPDATE chrl.device_magic SET cf_added='Yes' WHERE dmid=%s",D)
-          dbSendQuery(con,query)
-        }
-      }
-        
+
       #------------------------------------------------------------------------
       #------------------------------------------------------------------------   
       #updates field visit table 
