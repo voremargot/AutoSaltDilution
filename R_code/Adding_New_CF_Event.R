@@ -20,12 +20,12 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the workspace------------------------------------------
 ##-----------------------------------------------------------------------------------------------
-cat("\n")
-print(sprintf("Date and Time:%s", Sys.time()))
+#setting up the environment
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 options(java.parameters = "-Xmx8g")
-gg=gc()
+options(warn = - 1)  
 
+#libraries
 suppressMessages(library(googledrive))
 suppressMessages(library(DBI))
 suppressMessages(library(openxlsx))
@@ -33,8 +33,7 @@ suppressMessages(library(lubridate))
 suppressMessages(library(stringi))
 suppressMessages(library(prodlim))
 
-options(warn = - 1)  
-
+#connect to database and google drive
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 
@@ -42,16 +41,23 @@ drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 ##-----------------------------------------------------------------------------------
 ##-------------- Finding CF field sheets that are new to the drive------------------
 ##----------------------------------------------------------------------------------
+#print statements for log
+cat("\n")
+print('----------------------------------------------------')
+print('----------------------------------------------------')
+print(sprintf("Date and Time:%s", Sys.time()))
+
+#select all entries from the googledriveid table 
 query <- sprintf("SELECT * FROM chrl.googledriveid")
 Old_CF_Events <- dbGetQuery(con, query)
 
+#find which sheet in the google drive are new
 Drive_Sheets <- drive_ls("AutoSalt_Hakai_Project/CF_Measurements")
 New_Events <- Drive_Sheets[!(Drive_Sheets$id %in% Old_CF_Events$driveid), ]
 
+#if there is no new events,  stop script
 if (nrow(New_Events)<1){
   print('There are no new CF events to upload')
-  print('----------------------------------------------------')
-  print('----------------------------------------------------')
   quit()
 }
 
@@ -60,6 +66,8 @@ if (nrow(New_Events)<1){
 ##-----------------------------------------------------------------------------------------
 CF_Summary <- data.frame(); Sensor_Summary <- data.frame(); Events_added <- data.frame()
 Num <- 1
+
+
 for (x in c(1:nrow(New_Events))){
   CF_File <- 'working_directory/NewCF.xlsx'
   EA <- data.frame(name= New_Events[x,'name'],Googleid=New_Events[x,'id'], added= Sys.Date(), Num= Num)
@@ -69,6 +77,7 @@ for (x in c(1:nrow(New_Events))){
   drive_download(file=sprintf("AutoSalt_Hakai_Project/CF_Measurements/%s",New_Events[x,'name']), path= CF_File, overwrite = T)
   workbook <- read.xlsx(CF_File, sheet='Calibration',skipEmptyRows = F,skipEmptyCols = F)
 
+  # select metadata from the excel sheet
   SiteID <- as.integer(workbook[2,2])
   Date <- as.Date(as.integer(workbook[3,2]),origin='1899-12-30')
   PMP <- workbook[6,2]
@@ -77,6 +86,7 @@ for (x in c(1:nrow(New_Events))){
   ##---------------------------------------------------------------------------
   ##------------------- Determining the barrel period--------------------------
   ##---------------------------------------------------------------------------
+
   if (PMP=='Mid'){
     query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date >= '%s') AND (SiteID=%s)",Date,Date,SiteID)
     Periods <- dbGetQuery(con, query)
@@ -86,14 +96,19 @@ for (x in c(1:nrow(New_Events))){
       query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date IS NULL) AND (SiteID='%s')",Date,SiteID)
       Periods <- dbGetQuery(con, query)
     }
+    
+    
   } else if (PMP=='Pre'){
       query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date >= '%s') AND (SiteID=%s)",Date,Date,SiteID)
       Periods <- dbGetQuery(con, query)
+      
+      
   } else if (PMP=='Post'){
      query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date <= '%s') AND (Ending_Date IS NULL) AND (SiteID='%s')",Date,SiteID)
      Periods <- dbGetQuery(con, query)
   }
   
+  # if none of the previous scenarios produce a PeriodID, check if it falls in the first barrel period (for historical data uploads)
   if (nrow(Periods)==0){
     query <- sprintf("SELECT * FROM chrl.barrel_periods WHERE (Starting_Date IS NULL) AND (Ending_Date >= '%s') AND (SiteID='%s')",Date,SiteID)
     Periods <- dbGetQuery(con, query)
@@ -104,12 +119,17 @@ for (x in c(1:nrow(New_Events))){
   ##------------------------------------------------------------------------------------
   ##-------------------- Extracting data from the Calibration sheet---------------------
   ##------------------------------------------------------------------------------------
+  #get the link to google drive sheet
   Link <- drive_link(sprintf("AutoSalt_Hakai_Project/CF_Measurements/%s", New_Events[x,'name']))
   
+  #on site or lab
   Location <- workbook[7,2]
+  
   
   SensorInfo <- data.frame()
   for (Sen in c(1:4)){
+    
+    # get sensor info
     SenType <- workbook[(Sen+1),5]
     SerialNum <- workbook[(Sen+1),6]
     if (is.na(SenType)==TRUE & is.na(SerialNum)==TRUE){
@@ -122,8 +142,14 @@ for (x in c(1:nrow(New_Events))){
     if (SenType=='Threcs'){
       SenType <- 'THRECS'
     }
+    
+    #location of event
     Loc <- workbook[(Sen+1),7]
+    
+    #notes about event
     Notes <- workbook[(Sen+1),8]
+    
+    #average temperature for CF event
     if (Sen==1){
       Temp <- mean(as.numeric(workbook[13:18,4]),na.rm=TRUE)
     } else if (Sen==2){
@@ -134,6 +160,7 @@ for (x in c(1:nrow(New_Events))){
       Temp <- mean(as.numeric(workbook[40:45,4]),na.rm=TRUE)
     }
     
+    #summarize the data
     S <- data.frame(ProbeNum=Sen, Type=SenType, SerialNum= SerialNum, StreamLoc= Loc, Notes=Notes, Temp= Temp, Num=Num)
     SensorInfo <- rbind(SensorInfo,S)
   }
@@ -142,6 +169,8 @@ for (x in c(1:nrow(New_Events))){
   ##--------------- Extracting data from Uncertainty CF sheet-------------------------------------------
   ##----------------------------------------------------------------------------------------------------
   workbook <- read.xlsx(CF_File, sheet='Uncertainty CF',skipEmptyRows = F,skipEmptyCols = F)
+  
+  #extract CF and Error information 
   for (Sen in c(1:nrow(SensorInfo))){
     if (Sen==1){
       CF <- as.numeric(workbook[15,12])*10^6
@@ -157,8 +186,8 @@ for (x in c(1:nrow(New_Events))){
     } else if (Sen==4){
       CF <- as.numeric(workbook[99,12])*10^6
       Err <- as.numeric(workbook[106,11])
-      
     }
+    
     
     # Determine if the CF value is too high or low to use
     SensorInfo[Sen,'CF'] <- CF
@@ -194,7 +223,6 @@ for (x in c(1:nrow(Uni))){
 }
 
 
-
 # Insert the data into the database
 for (r in c(1:nrow(Uni))){
   
@@ -202,6 +230,8 @@ for (r in c(1:nrow(Uni))){
   query= sprintf("SELECT * FROM chrl.calibration_events WHERE SiteID=%s AND Date='%s'AND PMP='%s' AND Location='%s' AND PeriodID=%s",
     Uni[r,'SiteID'], Uni[r,'Date'],Uni[r,'PMP'],Uni[r,'Loc'],Uni[r,'PeriodID'])
   H= dbGetQuery(con,query)
+  
+  #if there are not already events for this site and date
   if (nrow(H)==0){
     print(sprintf("Adding New Event: WTS%s-%s-%s",Uni[r,"SiteID"],Uni[r,"PMP"],Uni[r,"Date"]))
     query <- sprintf("INSERT INTO chrl.calibration_events (PeriodID, SiteID, Date, PMP, Trial, Location) VALUES (%s,%s,'%s','%s',%s,'%s')",
@@ -214,48 +244,61 @@ for (r in c(1:nrow(Uni))){
     query <- gsub("\\n\\s+", " ", query)
     dbSendQuery(con, query)
     
+    # summarize results
     Num= CF_Summary[CF_Summary$PMP==Uni[r,"PMP"] & CF_Summary$PeriodID==Uni[r,'PeriodID'] &
                       CF_Summary$SiteID==Uni[r,"SiteID"] & CF_Summary$Date==Uni[r,"Date"] & 
-                      CF_Summary$Loc==Uni[r,"Loc"],'Num']
+                      CF_Summary$Loc==Uni[r,"Loc"]]
+    
+    #specify the entries are new
     for (N in Num){
       Sensor_Summary[Sensor_Summary$Num==N,'Addition']='New'
     }
     
-  
-    
+    #case where a CF event already exists for the site and date
   } else {
     for (h in c(1:nrow(H))){
       ID= H[h,"caleventid"]
       
+      #select the row that already exists in the database
       query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalEventID=%s", ID)
       duplicate=dbGetQuery(con,query)
       
+      # how many trials have already been entered into database
       Num_Trials_Before= max(duplicate$trial_number)
       
+      # select New CF events that match the data already in the database
       Num= CF_Summary[CF_Summary$PMP==H[h,'pmp'] & CF_Summary$PeriodID==H[h,'periodid'] &
                    CF_Summary$SiteID==H[h,'siteid'] & CF_Summary$Date==H[h,'date'] & 
                    CF_Summary$Loc==H[h,'location'],'Num']
+      
       Trials= Uni[Uni$PMP==H[h,'pmp'] & Uni$PeriodID==H[h,'periodid'] &
                         Uni$SiteID==H[h,'siteid'] & Uni$Date==H[h,'date'] & 
                         Uni$Loc==H[h,'location'],'Trials']
+      
+      # for all the new entries
       for (N in Num){
         Val= Sensor_Summary[Sensor_Summary$Num==N,]
+        
+        #determine if the added values are duplicates or new
         if (all(round(Val$CF,5) %in% duplicate$cf_value)== TRUE){
           Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Duplicate'
         } else {
           Sensor_Summary[Sensor_Summary$Num==N,'Addition']='Adding'
           
+          #if the data is new update the trial number in the database
           query <- sprintf("UPDATE chrl.calibration_events SET Trial= %s WHERE  caleventid=%s ", (Num_Trials_Before+Trials), ID)
           dbSendQuery(con,query)
         }
-        
       }
       
     }
   }
 }
  
+# select all added CF values 
 Sensor_Summary=Sensor_Summary[which(Sensor_Summary$Addition!="Duplicate"),]
+
+
 ##----------------------------------------------------------------------------------------------
 ##------------------- Enter data into the calibration results table----------------------------
 ##---------------------------------------------------------------------------------------------
@@ -280,6 +323,8 @@ for (R in c(1:nrow(Sensor_Summary))){
                 Sensor_Summary[R,'SerialNum'],
                 Sensor_Summary[R,'StreamLoc'])
   SensorID <- dbGetQuery(con, query)
+  
+  # check if a matching sensor exists. If not print an error statement
   if (nrow(SensorID)==0){
     SensorID <- NA
     print(sprintf('ERROR: No matching sensor info in database for CF Event at site %s on %s',
@@ -293,9 +338,13 @@ for (R in c(1:nrow(Sensor_Summary))){
 # Update the googledriveid table that records which Google drive documents have been added
 for (R in c(1:nrow(Events_added))){
   Number <- Events_added[R,'Num']
+  
+  # if all sheets are duplicates of those already added
   if (all(Sensor_Summary[Sensor_Summary$Num==Number, 'Addition']=='Duplicate')==TRUE){
     next()
   }
+  
+  #insert google drive links
   query <- sprintf("INSERT INTO chrl.googledriveid (file_name,driveid,date_added,caleventid) VALUES ('%s','%s','%s',%s)",
             Events_added[R,'name'],
             Events_added[R,'id'],
@@ -311,6 +360,7 @@ Ca=c(0)
 for (f in c(1:nrow(Trial_assignment))){
   ID <- Trial_assignment[f,'CalEventID'] 
   assign <- sum(Ca==ID)+1
+  
   if (Trial_assignment[f,"Addition"]=="Adding"){
     query=sprintf("SELECT trial_number from chrl.calibration_results WHERE CalEventID=%s",ID)
     trials_thus_far= unique(dbGetQuery(con,query)$trial_number)
@@ -325,12 +375,18 @@ for (f in c(1:nrow(Trial_assignment))){
 # Insert data into the calibration results table
 for (R in c(1:nrow(Sensor_Summary))){
   Number <- Sensor_Summary[R,'Num']
+  
+  #don't added data if it a duplicate
   if (Sensor_Summary[R,'Addition']=='Duplicate'){
     next()
   }
+  
+  # if no flags, enter flags as NA
   if (is.null(Sensor_Summary[R,'Flags'])==TRUE){
     Sensor_Summary[R,'Flags'] <- NA
   }
+  
+  # enter calibration results
   query <- sprintf("Insert INTO chrl.calibration_results (CalEventID,SiteID,SensorID,trial_number,Temp,CF_value,Per_Err,Flags,Notes,Link)
                  VALUES (%s,%s,%s,%s,%s,%s,%s,'%s','%s','%s')",
                  CF_Summary[which(CF_Summary$Num==Number),'CalEventID'],
@@ -355,9 +411,15 @@ for (R in c(1:nrow(Sensor_Summary))){
 CalE= unique(CF_Summary$CalEventID)
 CalResults=data.frame()
 for (E in CalE){
+  
+  #extract all temperatures
   query= sprintf("SELECT Temp from chrl.calibration_results WHERE CalEventID=%s",E)
   Tmps= dbGetQuery(con,query)
+  
+  # average temps
   T_mean= mean(Tmps$temp,na.rm=TRUE)
+  
+  #update database
   query=sprintf("UPDATE chrl.calibration_events SET Temp=%s WHERE CalEventID= %s",T_mean,E)
   dbSendQuery(con,query)
   
@@ -376,7 +438,7 @@ for (E in CalE){
 ##-------------------------------------------------------------------
 Unique_periods= unique(CalResults$PeriodID)
 
-# select autosalt events in the barrel period of CF mesaurements
+# select autosalt events in the barrel period of CF measurements
 for (P in Unique_periods){
   query= sprintf("SELECT EventID, SiteID, Date, Temp FROM chrl.autosalt_summary WHERE PeriodID=%s", P)
   Events= dbGetQuery(con,query)
@@ -414,7 +476,4 @@ for (P in Unique_periods){
 dbDisconnect(con)
 options(warn = 0)
 
-
-print('---------------------------------------------------')
-print('---------------------------------------------------')
 
