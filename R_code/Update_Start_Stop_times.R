@@ -31,10 +31,10 @@ setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 options(java.parameters = "-Xmx8g")
 
 #load libraries
-library(DBI)
-library(dplyr)
-library(googledrive)
-library(XLConnect)
+suppressMessages(library(DBI))
+suppressMessages(library(dplyr))
+suppressMessages(library(googledrive))
+suppressMessages(library(XLConnect))
 source("AutoSalt_Functions.R")
 
 #connect to database and Google Drive
@@ -65,7 +65,7 @@ Event_to_edit <- tryCatch({
   NA
 })
 
-#checks you put ina valid EventID/Site pair for analysis
+#checks you put in a valid EventID/Site pair for analysis
 while (nrow(Event_to_edit)==0){
   print("The EventID/SiteID combon you entered does not exist in the database")
   print("Please recheck your values and try again ")
