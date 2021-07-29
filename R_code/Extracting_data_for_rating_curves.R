@@ -83,13 +83,15 @@ for (r in c(1:nrow(autosalt_summary))){
   Year=as.numeric(format(as.Date(autosalt_summary[r,'date']),'%Y'))
   Month= as.numeric(format(as.Date(autosalt_summary[r,'date']),'%m'))
   
+  # determine the water year of the event
   if (Month >=10){
     WY= sprintf('%s-%s',Year,(Year+1))
   } else {
     WY= sprintf('%s-%s',(Year-1),Year)
   }
-  
   autosalt_summary[r,'WY']=WY
+  
+  # assign a included and event number to each event
   if (nrow(Autosalt_included[Autosalt_included$eventid==EventID,])>=1){
     autosalt_summary[r,'Included']='Y'
     autosalt_summary[r,'EventNumber']=Autosalt_included[Autosalt_included$eventid==EventID,'eventno']
@@ -99,6 +101,7 @@ for (r in c(1:nrow(autosalt_summary))){
   }
 }
 
+# determine if each data point is old  or  new since the RC of interest
 autosalt_summary[autosalt_summary$date <= EndDate,'OldNew']='Old'
 autosalt_summary[autosalt_summary$date > EndDate,'OldNew']='New'
 autosalt_summary$Method='Autosalt'
@@ -109,7 +112,7 @@ Final=autosalt_summary[,c('eventid','MID','siteid','Method','date','start_time',
 
 
 ##----------------------------------------------------------------------------------------------------------------------
-##------------------------- Orginize Manual discharge events for CSV download--------------------------------------------
+##------------------------- Organize Manual discharge events for CSV download--------------------------------------------
 ##-----------------------------------------------------------------------------------------------------------------------
 
 # List which manual events were included in the previous rating curve
@@ -126,12 +129,15 @@ for (r in c(1:nrow(manual_summary))){
   Year=as.numeric(format(as.Date(manual_summary[r,'date']),'%Y'))
   Month= as.numeric(format(as.Date(manual_summary[r,'date']),'%m'))
   
+  # determine the water year of each event
   if (Month >=10){
     WY= sprintf('%s-%s',Year,(Year+1))
   } else {
     WY= sprintf('%s-%s',(Year-1),Year)
   }
   manual_summary[r,'WY']=WY
+  
+  # assign an included and event number to each collection
   MDisID= manual_summary[r,'mdisid']
   if (nrow(Manual_included[Manual_included$mdisid==MDisID,])>=1){
     manual_summary[r,'Included']='Y'
@@ -142,6 +148,7 @@ for (r in c(1:nrow(manual_summary))){
   }
 }
 
+#determine if the event is new or old in relation to the rc
 manual_summary[manual_summary$date <= EndDate,'OldNew']='Old'
 manual_summary[manual_summary$date > EndDate,'OldNew']='New'
 
