@@ -97,7 +97,7 @@ return(c(1,Warning))
 sensor_update <- function (working, S){
   
   # function that is used if a sensor was replaced
-  Replace <- function (ss, Old_data) {
+  Replace <- function (ss_sub, Old_data) {
     ### This function selects the old and new sensors from the device magic form
     ### and does checks that the data entered into the device magic form accurately corresponds
     ### to the data in the database. If the data in the device magic form does not match with that in 
@@ -107,92 +107,135 @@ sensor_update <- function (working, S){
     Warning=NA
     
     # subset data
-    data= ss[ss$action=='Replace',]
+    data= ss_sub[grepl('Replace',ss_sub$action)==TRUE,]
     
     #define dmid 
     D= data$dmid
     Date= as.Date(data$date_visit)
     
     # removed sensor type
-    Remove_type=Empty_string(unlist(strsplit(data$sen_r_removed_type,',')))
-    if (Remove_type=="Other"){
-      Remove_type=Empty_string(unlist(strsplit(data$sen_r_removed_type_other,',')))
+    Remove_Type=trimws(unlist(strsplit(data$sen_r_removed_type,',')))
+    if (any(Remove_Type=="Other")==TRUE){
+      Oth= which(Remove_Type=='Other')
+      for (O in Oth){
+        Remove_Type[O]= toupper(trimws(unlist(strsplit(data$sen_r_removed_type_other,', '))[O]))
+      }
     }
+    Remove_Type=Empty_string(Remove_Type)
     
     # removed sensor's serial number
-    Remove_SN=toupper(Empty_string( unlist(strsplit(data$sen_r_removed_sn,','))))
+    Remove_SN=toupper(Empty_string(trimws(unlist(strsplit(data$sen_r_removed_sn,',')))))
     
     #removed sensor's probe number
     Remove_Probe= as.numeric(Empty_string(unlist(strsplit(data$sen_r_removed_probenum,','))))
     
     # the replacement probe type
-    New_type=Empty_string(unlist(strsplit(data$sen_r_new_type,',')))
-    if (New_type=="Other"){
-      New_type=Empty_string(unlist(strsplit(data$sen_r_new_type_other,',')))
+    New_Type=trimws(unlist(strsplit(data$sen_r_new_type,',')))
+    if (any(New_Type=="Other")==TRUE){
+      Oth= which(New_Type=='Other')
+      for (O in Oth){
+        New_Type[O]= toupper(trimws(unlist(strsplit(data$sen_r_new_type_other,', '))[O]))
+      }
     }
+    New_Type=Empty_string(New_Type)
+    
     
     # replacement probe serial number
-    New_SN= toupper(Empty_string(unlist(strsplit(data$sen_r_new_sn,','))))
+    New_SN= toupper(trimws(Empty_string(unlist(strsplit(data$sen_r_new_sn,',')))))
     
     # replacement probe number
     New_Probe= as.numeric(Empty_string(unlist(strsplit(data$sen_r_new_probenum,','))))
     
     #replacement probe river location
-    New_RL=Empty_string(unlist(strsplit(data$sen_r_new_rivloc,',')))
-    if (New_RL=='Other'){
-      New_RL=Empty_string(unlist(strsplit(data$sen_r_new_rivloc_other,',')))
+    New_RL=trimws(unlist(strsplit(data$sen_r_new_rivloc,',')))
+    if (any(New_RL=='Other')==TRUE){
+      Oth= which(New_RL=='Other')
+      for (O in Oth){
+        New_RL[O]= trimws(unlist(strsplit(data$sen_r_new_rivloc_other,', '))[O])
+      }
+    }
+    New_RL= Empty_string(New_RL)
+    
+    DF= data.frame(probe_number_remove=Remove_Probe,sensor_type_remove=Remove_Type,serial_number_remove= Remove_SN, probe_number_add= New_Probe, sensor_type_add= New_Type, serial_number_add= New_SN, riverloc_add= New_RL)
+    Duplicate= data.frame(probe_number_remove= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"probe_number"],
+                          sensor_type_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"sensor_type"],
+                          serial_number_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"serial_number"],
+                          probe_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"probe_number"],
+                          sensor_type_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"sensor_type"],
+                          serial_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"serial_number"],
+                          riverloc_add=Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"river_loc"])
+    
+    if (nrow(Duplicate)>0){
+      new_rows= anti_join(DF,Duplicate,by=c("probe_number_remove","sensor_type_remove","serial_number_remove","probe_number_add","sensor_type_add","serial_number_add","riverloc_add"))
+      if (nrow(new_rows)==0){
+        return(data.frame(Type='Replace',Work=1,Changed=0,Com=Warning))
+      } else{
+        Remove_Probe= new_rows$probe_number_remove
+        Remove_Type= new_rows$sensor_type_remove
+        Remove_SN= new_rows$serial_number_remove
+        New_Probe= new_rows$probe_number_add
+        New_SN= new_rows$serial_number_add
+        New_RL= new_rows$riverloc_add
+        New_Type= new_rows$sensor_type_add
+      }
     }
     
-    Duplicate_deca= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),]
-    Duplicate_act= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),]
-    G= Duplicate_deca[which(Duplicate_deca$probe_number==Remove_Probe & Duplicate_deca$sensor_type==Remove_type & Duplicate_deca$serial_number==Remove_SN),]
-    H= Duplicate_act[which(Duplicate_act$probe_number==New_Probe & Duplicate_act$sensor_type==New_type & Duplicate_act$serial_number==New_SN),]
-    if (nrow(G)==1 & nrow(H)==1){
-      return(c(1,Warning))
-    } 
+  
     
-    # check the probe that you are removing exits at that site
-    wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Remove_type & Old_data$serial_number==Remove_SN),]
-    if (nrow(wk_old)==0){
-      Warning= sprintf('Sensor %s that you are trying to deactivate doesnt exist in the stream at this site (DMID=%s)! Please review the field notes.',Remove_SN,D)
-      return (c(0,Warning))
+    # check the probe that you are removing hasn't previously been removed
+    for (m in c(1:length(Remove_Type))){
+      wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Remove_Type[m] & Old_data$serial_number==Remove_SN[m]),]
+      if (nrow(wk_old)==0){
+        Warning= sprintf('Sensor %s that you are trying to deactivate doesnt exist in the stream at this site! Please review the field notes.',Remove_SN[m])
+        return (data.frame(Type='Replace',Work=0,Changed=length(Remove_SN),Com=Warning))
+      } else if (nrow(wk_old)>0){
+        wk_old= wk_old[is.na(wk_old$deactivation_date)==TRUE,]
+        if (nrow(wk_old)==0){
+          Warning= sprintf('Sensor %s that you are trying to deactivate has previously been taken out! Please review the field notes.',Remove_SN[m])
+          return (data.frame(Type='Replace',Work=0,Changed=length(Remove_SN),Com=Warning))
+        }
+      }
     }
     
-    # check the probe that you are removing has not been previously deactivated
-    if (is.na(wk_old$deactivation_date)==FALSE){
-      Warning= sprintf('Sensor %s that you are trying to deactivate has previously been taken out (DMID=%s)! Please review the field notes.',Remove_SN,D)
-      return (c(0,Warning))
-    }
-    
+  
     # make sure the removed probed and replacement probe have the same probe numbers
-    if (New_Probe != Remove_Probe){
-      Warning=sprintf('The probe numbers you are replacing are different (DMID=%s) (New Probe -> %s, Old Probe -> %s. Please check the data.',D,New_Probe,Remove_Probe)
-      return(c(0,Warning))
+    if (any(New_Probe != Remove_Probe)==TRUE){
+      Warning=paste(c(sprintf('The probe numbers you are replacing are different (New Probe -> ',D), New_Probe, "Old Probe ->", Remove_Probe,". Please check the data."),collapse=" ")
+      return(data.frame(Type='Replace',Work=0,Changed=length(Remove_SN),Com=Warning))
     }
     
     # update the deactivation date of the replaced sensor
-    sensorid_old= wk_old$sensorid
-    query= sprintf("UPDATE chrl.sensors SET deactivation_date='%s' WHERE sensorid=%s", Date,sensorid_old)
-    query <- gsub("\\n\\s+", " ", query)
-    query <- gsub('NA',"NULL", query)
-    query <- gsub("'NULL'","NULL",query)
-    query <- gsub('NaN',"NULL",query)
-    dbSendQuery(con,query)
+    for (m in c(1:length(Remove_Type))){
+      wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Remove_Type[m] & Old_data$serial_number==Remove_SN[m] & is.na(Old_data$deactivation_date)==TRUE),]
+      sensorid_old= wk_old$sensorid
+      query= sprintf("UPDATE chrl.sensors SET deactivation_date='%s' WHERE sensorid=%s", Date,sensorid_old)
+      query <- gsub("\\n\\s+", " ", query)
+      query <- gsub('NA',"NULL", query)
+      query <- gsub("'NULL'","NULL",query)
+      query <- gsub('NaN',"NULL",query)
+      
+      dbSendQuery(con,query)
+    }
+    
     
     # add a new record for the new sensor that was placed in the stream
     query= sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
-                         (%s,%s,'%s','%s','%s','%s')", S,New_Probe,New_type,New_SN,New_RL,Date)
+                         (%s,%s,'%s','%s','%s','%s')", S,New_Probe,New_Type,New_SN,New_RL,Date)
     query <- gsub("\\n\\s+", " ", query)
     query <- gsub('NA',"NULL", query)
     query <- gsub("'NULL'","NULL",query)
     query <- gsub('NaN',"NULL",query)
-    dbSendQuery(con,query)
     
-    return (c(1, Warning))
+    for (Q in query){
+      dbSendQuery(con,Q)
+    }
+    
+    
+    return (data.frame(Type='Replace',Work=1,Changed=length(Remove_SN),Com=Warning))
   }
   
   # function that is used if a sensor is removed without replacement
-  Remove <- function(ss,Old_data){
+  Remove <- function(ss_sub,Old_data){
     ### This function selects the sensor that was removed from the device magic form 
     ### and does checks that the data entered into the device magic form accurately corresponds
     ### to the data in the database. If the data in the device magic form does not match with that in 
@@ -202,17 +245,21 @@ sensor_update <- function (working, S){
     Warning=NA
     
     # subset the data to events where sensors have been removed
-    data=ss[ss$action=='Remove',]
+    data=ss_sub[grepl('Remove',ss_sub$action)==TRUE,]
     
     #specify the dmid for warning messages
     D=data$dmid
     Date= as.Date(data$date_visit)
     
     # Sensor type that was removed
-    Remove_type= Empty_string(trimws(unlist(strsplit(data$sen_remove_type, ", "))))
-    if (Remove_type=='Other'){
-      Remove_type=Empty_string(trimws(unlist(strsplit(data$sen_remove_type_other,", "))))
+    Remove_Type= trimws(unlist(strsplit(data$sen_remove_type, ", ")))
+    if (any(Remove_Type=='Other')==TRUE){
+      Oth= which(Remove_Type=='Other')
+      for (O in Oth){
+        Remove_Type[O]= toupper(trimws(unlist(strsplit(data$sen_remove_type_other,', '))[O]))
+      }
     }
+    Remove_Type=Empty_string(Remove_Type)
     
     #probe number of sensor removed
     Remove_Probe= as.numeric(Empty_string(unlist(strsplit(data$sen_remove_probenum,", "))))
@@ -220,41 +267,52 @@ sensor_update <- function (working, S){
     # serial number of removed sensor
     Remove_SN= toupper(trimws(Empty_string(unlist(strsplit(data$sen_remove_sn,", ")))))
     
-    Duplicate= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),]
-    G= Duplicate[which(Duplicate$probe_number==Remove_Probe & Duplicate$sensor_type==Remove_type & Duplicate$serial_number==Remove_SN),]
-    if (nrow(G)==1){
-      return(c(1,Warning))
-    } 
+    # check if any data is duplicated
+    DF= data.frame(probe_number=Remove_Probe,sensor_type=Remove_Type,serial_number= Remove_SN)
+    Duplicate= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),c("probe_number","sensor_type","serial_number")]
     
-    # check that the sensor that removed exists at the site
-    old_wk= Old_data[which(Old_data$siteid==S & Old_data$probe_number==Remove_Probe & Old_data$sensor_type== Remove_type & Old_data$serial_number==Remove_SN),]
-    if (nrow(old_wk)==0){
-      Warning=sprintf('The sensor you say was removed (SN=%s) does not exist at site %s (DMID=%s). Please review the field data',Remove_SN,S,D)
-      return(c(0,Warning))
+    if (nrow(Duplicate)>0){
+      new_rows= anti_join(DF,Duplicate,by=c("probe_number","sensor_type","serial_number"))
+      if (nrow(new_rows)==0){
+        return(data.frame(Type='Remove',Work=1,Changed=0,Com=Warning))
+      } else{
+        Remove_Probe= new_rows$probe_number
+        Remove_Type= new_rows$sensor_type
+        Remmove_SN= new_rows$serial_number
+      }
     }
     
-    Duplicate= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),]
-    G= Duplicate[which(Duplicate$probe_number==Remove_Probe & Duplicate$sensor_type==Remove_type & Duplicate$serial_number==Remove_SN),]
-    if (nrow(G)==1){
-      return(c(1,Warning))
-    } 
     
-    # check if the sensor removed has previously been deactivated
-    if(is.na(old_wk$deactivation_date)==FALSE){
-      Warning= sprintf('The sensor you are trying to remove (SN=%s) already has been deactivated (DMID=%s). Please review the field data',Remove_SN,D)
-      return(c(0,Warning))
+    for (m in c(1:length(Remove_Type))){
+      wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Remove_Type[m] & Old_data$serial_number==Remove_SN[m] & Old_data$probe_number==Remove_Probe[m]),]
+      if (nrow(wk_old)==0){
+        Warning= sprintf('Sensor %s that you are trying to deactivate doesnt exist in the stream at this site! Please review the field notes.',Remove_SN[m])
+        return (data.frame(Type='Replace',Work=0,Changed=length(Remove_SN),Com=Warning))
+      } else if (nrow(wk_old)>0){
+        wk_old= wk_old[is.na(wk_old$deactivation_date)==TRUE,]
+        if (nrow(wk_old)==0){
+          Warning= sprintf('Sensor %s that you are trying to deactivate has previously been taken out! Please review the field notes.',Remove_SN[m])
+          return (data.frame(Type='Replace',Work=0,Changed=length(Remove_SN),Com=Warning))
+        }
+      }
     }
     
+   
+  
     # update the deactivation date of the removed sensor in the database
-    SensorID= old_wk$sensorid
-    query=sprintf("UPDATE chrl.sensors SET deactivation_date= '%s' WHERE sensorid=%s", Date,SensorID)
-    dbSendQuery(con,query) 
+    for (m in c(1:length(Remove_Type))){
+      wk_old= Old_data[which(Old_data$siteid==S & Old_data$sensor_type==Remove_Type[m] & Old_data$serial_number==Remove_SN[m] & is.na(Old_data$deactivation_date)==TRUE),]
+      SensorID= wk_old$sensorid
+      query=sprintf("UPDATE chrl.sensors SET deactivation_date= '%s' WHERE sensorid=%s", Date,SensorID)
+      dbSendQuery(con,query) 
+    }
     
-    return(c(1,Warning))
+    
+    return(data.frame(Type='Remove',Work=1,Changed=length(Remove_SN),Com=Warning))
   }
   
   # function that is used if a sensor is added to the network
-  Add  <- function(ss, Old_data){
+  Add  <- function(ss_sub, Old_data){
     ### This function selects the added  sensor(s) from the device magic form
     ### and does checks that the data entered into the device magic form accurately corresponds
     ### to the data in the database. If the data in the device magic form does not match with that in 
@@ -264,17 +322,21 @@ sensor_update <- function (working, S){
     Warning=NA
     
     # Subset the data to events where sensors were added
-    data=ss[ss$action=='Add',]
+    data=ss_sub[grepl('Add',ss_sub$action)==TRUE,]
     
     #specify the dmid for warning messages
     D=data$dmid
     Date= as.Date(data$date_visit)
     
     # define the sensor type of the new sensor
-    Add_Type=Empty_string(trimws(unlist(strsplit(data$sen_add_type,', '))))
-    if(Add_Type=='Other'){
-      Add_Type=Empty_string(trimws(unlist(strsplit(data$sen_add_type_other,', '))))
+    Add_Type=trimws(unlist(strsplit(data$sen_add_type,', ')))
+    if(any(Add_Type=='Other')==TRUE){
+      Oth= which(Add_Type=='Other')
+      for (O in Oth){
+        Add_Type[O]= toupper(trimws(unlist(strsplit(data$sen_add_type_other,', '))[O]))
+      }
     }
+    Add_Type=Empty_string(Add_Type)
     
     # Added sensor probe number
     Add_Probe= as.numeric(Empty_string(unlist(strsplit(data$sen_add_probenum,', '))))
@@ -283,34 +345,66 @@ sensor_update <- function (working, S){
     Add_SN= toupper(Empty_string(trimws(unlist(strsplit(data$sen_add_sn,', ')))))
     
     # Added sensor river location
-    Add_RiverLoc= Empty_string(trimws(unlist(strsplit(data$sen_add_riverloc,', '))))
-    if (Add_RiverLoc=='Other'){
-      Add_RiverLoc=Empty_string(trimws(unlist(strsplit(data$sen_add_riverloc_other,', '))))
+    Add_RiverLoc= trimws(unlist(strsplit(data$sen_add_riverloc,', ')))
+    if (any(Add_RiverLoc=='Other')==TRUE){
+      Oth= which(Add_RiverLoc=='Other')
+      for (O in Oth){
+        Add_RiverLoc[O]= trimws(unlist(strsplit(data$sen_add_riverloc_other,', '))[O])
+      }
+    }
+    Add_RiverLoc=Empty_string(Add_RiverLoc)
+    
+    DF= data.frame(probe_number=Add_Probe,sensor_type=Add_Type,serial_number= Add_SN,river_loc=Add_RiverLoc)
+    Duplicate= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),c("probe_number","sensor_type","serial_number","river_loc")]
+    
+    if (nrow(Duplicate)>0){
+      new_rows= anti_join(DF,Duplicate, by=c('probe_number','sensor_type','serial_number','river_loc'))
+      if (nrow(new_rows)==0){
+        return(data.frame(Type='Add',Work=1,Changed=0,Com=Warning))
+      } else{
+        Add_Probe= new_rows$probe_number
+        Add_Type= new_rows$sensor_type
+        Add_SN= new_rows$serial_number
+        Add_RiverLoc= new_rows$river_loc
+      }
     }
     
-    Duplicate= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),]
-    G= Duplicate[which(Duplicate$probe_number==Add_Probe & Duplicate$sensor_type==Add_Type & Duplicate$serial_number==Add_SN & Duplicate$river_loc==Add_RiverLoc),]
-    if (nrow(G)==1){
-      return(c(1,Warning))
-    } 
    
     # double check that this sensor is not already recorded as being active in the database
     Active_Stations=Old_data[which(Old_data$siteid==S & is.na(Old_data$install_date)==FALSE & is.na(Old_data$deactivation_date)==TRUE),]
-    if (Add_Probe %in% Active_Stations$probe_number){
-      Warning=sprintf('There is already an active sensor with probe number %s (DMID=%s). Please review the field data',Add_Probe,D)
-      return(c(0,Warning))
+    if (any(Add_Probe %in% Active_Stations$probe_number)==TRUE){
+      if (length(Add_Probe)>1){
+        Warning=print(c('At least one of the sensors that are being added has an overlapping probe number[',Add_Probe,']. Please review the field data'),collapse=' ')
+        return(data.frame(Type='Add',Work=0,Changed=length(Add_SN),Com=Warning))
+      }else {
+        Warning=sprintf('There is already an active sensor with probe number %s (DMID=%s). Please review the field data',Add_Probe,D)
+        return(data.frame(Type='Add',Work=0,Changed=length(Add_SN),Com=Warning))
+      }
     } 
     
+    for (x in c(1:length(Add_SN))){
+      US= Active_Stations[Active_Stations$serial_number==Add_SN[x],]
+      if (nrow(US)>0){
+        if (nrow(US[US$sensor_type==Add_Type[x],])>0){
+          Warning=sprintf('There is already an active sensor with the serial number of %s in the stream. Please review the field data',Add_SN[x])
+          return(data.frame(Type='Add',Work=0,Changed=length(Add_SN),Com=Warning))  
+          
+        }
+      }
+    }
+    
     # create new record for the added sensor in the database
-    query=sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
+    query <- sprintf("INSERT INTO chrl.sensors (siteid, probe_number,sensor_type,serial_number,river_loc,install_date) VALUES
                          (%s,%s,'%s','%s','%s','%s')",S,Add_Probe,trimws(Add_Type),trimws(Add_SN),trimws(Add_RiverLoc),Date)
     query <- gsub("\\n\\s+", " ", query)
     query <- gsub('NA',"NULL", query)
     query <- gsub("'NULL'","NULL",query)
     query <- gsub('NaN',"NULL",query)
-    dbSendQuery(con,query)
-  
-  return (c(1,Warning))
+    
+    for (Q in query){
+      dbSendQuery(con,Q)
+    }
+  return (data.frame(Type='Add',Work=1,Changed=length(Add_SN),Com=Warning))
     
   }
   
@@ -321,91 +415,78 @@ sensor_update <- function (working, S){
   # select subset of visits where sensor change happened
   ss= working[which(working$ec_sensor_change=='yes'),]
   
-  #update the device magic tabel for entries where ec_sensor_changes haven't occurred
+  #update the device magic table for entries where ec_sensor_changes haven't occurred
   ss_other= working[which(working$ec_sensor_change=='no'),]
   for (D in ss_other$dmid){
     query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
     dbSendQuery(con,query)
   }
   
-  # select sensor data already in the database
-  Old_data= dbGetQuery(con, "SELECT * FROM chrl.sensors")
-  
   
   # determine which actions occurred for sensor changes
   # Note: for each action the database will change in a different way
-  Action= unlist(strsplit(ss$action,','))
-  Action= Action[Action!=" "]
-  ss$action=Action 
+  Action= trimws(unlist(strsplit(ss$action,',')))
+  Action= unique(Action[Action!=""])
   
   Warning= NA
-  Res=c(-999); Com=c();
+  Res=c(); Com=c();
   
 
   #run the code for each different sensor action in the data
+  run=0
   for (x  in c(1:length(Action))){
-    
+    run=run+1
     #define the action we are working with
     wk_action= Action[x]
+    wk_ss= ss[which(grepl(wk_action,ss$action)==TRUE),]
     
-    if (nrow(ss[ss$action==wk_action,])>1){
-      next()
-    }
-    
-    #define the dmid of the event for print messages
-    D= ss[ss$action==wk_action,'dmid']
-    
-    # case where sensor is replaced in the river
-    if (wk_action=='Replace'){
-      # run the replace function
-      Num= Replace(ss,Old_data)
+    Num=data.frame(Type=character(),
+                   Work=integer(),
+                   Changed= character(),
+                   Com= character())
+    for (y in c(1:nrow(wk_ss))){
+      Old_data= dbGetQuery(con, "SELECT * FROM chrl.sensors")
+      #define the dmid of the event for print messages
+      D= wk_ss[y,'dmid']
       
-      #if function ran smoothly, change the device magic table, and record a comment
-      if (as.numeric(Num[1])==1){
-        Com= append(Com,"Sensor was replaced")
-        query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
-        dbSendQuery(con,query)
-        
-      # if there is an error in the sensor replacement print the error and record a zero
-      } else {
-        Com= append(Com,sprintf("Error in sensor replacement: %s",Num[2]))
-        Res= append(Res,0)
+      # case where sensor is replaced in the river
+      
+      if (wk_action=='Replace'){
+        Num= rbind(Replace(wk_ss[y,],Old_data),Num)
+      } else if (wk_action=='Remove'){
+        Num=rbind(Num,Remove(wk_ss[y,], Old_data))
+      } else if (wk_action=='Add'){
+        Num=rbind(Num,Add(wk_ss[y,], Old_data))
       }
-      
-      # the case where the sensor is removed without replacement
-    } else if (wk_action=='Remove'){
-        # run the remove function
-        Num= Remove(ss, Old_data)
-        
-        #if function ran smoothly, change the device magic table, and record a comment
-        if (as.numeric(Num[1])==1){
-          Com=append(Com,"Sensor was removed")
-          query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
-          dbSendQuery(con,query)
-          
-          # if there is an error in the sensor replacement print the error and record a zero
-        } else {
-          Com= append(Com,sprintf("Error in sensor removal: %s",Num[2]))
-          Res= append(Res,0)
-        }
-       
-      #case where a sensor is added to the network   
-    } else if (wk_action=='Add'){
-        #run the add sensor function
-        Num= Add(ss, Old_data)
-        
-        #if function ran smoothly, change the device magic table, and record a comment
-        if  (as.numeric(Num[1])==1){
-          Com=append(Com,"Sensor was Added")
-          query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
-          dbSendQuery(con,query)
-        
-        # if there is an error in the sensor replacement print the error and record a zero
-        } else {
-            Com=append(Com,sprintf("Error in sensor addition: %s",Num[2]))
-            Res= append(Res,0)
-        }
     }
+    if (all(Num$Type=='Replace')==TRUE){
+      word= 'replaced'
+      word2= 'replacement'
+    } else if (all(Num$Type=='Add')==TRUE){
+      word= 'added'
+      word2= 'addition'
+    } else if (all(Num$Type=='Remove')==TRUE){
+      word= 'removed'
+      word2= 'removal'
+    }
+    
+    if (sum(Num$Changed)!=1){
+      syn='sensors'
+      wa ='were'
+    } else {
+      syn= 'sensor'
+      wa='was'
+    }
+    
+    if (all(Num$Work==1)==TRUE){
+      Total= sum(Num$Changed)
+      Com= append(Com,sprintf("%s %s %s %s",Total,syn,wa,word))
+      Res= append(1,Res)
+    } else {
+      Com= append(Com,sprintf("There was an error during sensor %s: %s",word2,Num[is.na(Num$Com)==FALSE,'Com']))
+      Res= append(0,Res)
+    }
+   
   }
   
   # if there was an error in one of the sensor functions, return a zero
@@ -643,7 +724,11 @@ CF_event_check <-  function(working, S){
   Warning= NA
   
   PMP= Empty_string(trimws(unlist(strsplit(working$time_barrel_period,','))))
+  PMP=PMP[!(is.na(PMP)==TRUE)]
+  
   Trials= as.numeric(Empty_string(trimws(unlist(strsplit(working$trials_cf,',')))))
+  Trials= Trials[!(is.na(Trials)==TRUE)]
+  
   query= sprintf("Select * from chrl.calibration_events  WHERE SiteID=%s AND Date='%s'",S,Date)
   CF= dbGetQuery(con,query)
   

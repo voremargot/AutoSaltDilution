@@ -31,6 +31,7 @@ suppressMessages(library(DBI))
 suppressMessages(library(data.table))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
+suppressMessages(library(generics))
 suppressMessages(source('Device_magic_functions.R'))
 
 # function to remove empty strings from vector
@@ -116,6 +117,12 @@ if (nrow(Field)==0){
         #print all comments that occurred during the sensor update
         for (C in Num[-1]){
           print(C)
+        }
+        if (as.numeric(Num[1])==1){
+          for (D in DMI){
+            query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
+            dbSendQuery(con,query)
+          }
         }
         Results=append(Results,as.numeric(Num[1]))
         
