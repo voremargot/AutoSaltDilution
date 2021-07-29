@@ -23,17 +23,20 @@
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
+## THESE NEED TO BE UPDATED BY THE USER FOR THEIR ENVIRONMENT
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 setwd("/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
 
 
 options(java.parameters = "-Xmx8g")
+options(warn = - 1)  
 
-library(DBI)
-library(dplyr)
-library(googledrive)
+suppressMessages(library(DBI))
+suppressMessages(library(dplyr))
+suppressMessages(library(googledrive))
 source("AutoSalt_Functions.R")
 
+# connect to google drive and the database
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 drive_auth(email=Sys.getenv('email_gdrive'))
 
@@ -61,7 +64,7 @@ if (Change=='adding' | Change=='Adding'){
   Event_to_edit[Event_to_edit$sensorid==Sensor,'used']='N'
 }
 
-# Get calibration EventID for mixing percentage calcuations
+# Get calibration EventID for mixing percentage calculations
 for (CFID in Event_to_edit$cfid){
   Query= sprintf("SELECT * FROM chrl.calibration_results WHERE CalResultsID=%i",CFID)
   CalibrationInfo <- dbGetQuery(con, Query) 
@@ -119,4 +122,6 @@ Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
 dbSendQuery(con, Query)
 
+
 dbDisconnect(con)
+options(warn = 0)
