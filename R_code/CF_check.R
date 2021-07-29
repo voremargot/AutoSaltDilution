@@ -1,16 +1,27 @@
 #!/usr/bin/Rscript
+##-----------------------------------------------------------------------------------------------
+# Created by: Margot Vore 
+# July 2021
+# 
+# This code is used to validate the CF measurements that are put into the database with
+# what is entered into the device magic forms. This code can determine if the PMP values 
+# differ from what was done in the field as well as make sure that there is no duplicate data.
+# The user will have to fix any issues that the code identifies by hand.
 
-# readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-# setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
-setwd("/home/autosalt/AutoSaltDilution/R_code")
+##-----------------------------------------------------------------------------------------------
+## ---------------------------Setting up the work space------------------------------------------
+##-----------------------------------------------------------------------------------------------
+# set working environment
+readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
+# readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+# setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 
 options(java.parameters = "-Xmx8g")
+options(warn = - 1)  
 
-print("-------------------------------------------------")
-print("-------------------------------------------------")
-print(sprintf("Date and Time:%s", Sys.time()))
+
 
 #Libraries
 suppressMessages(library(DBI))
@@ -20,8 +31,9 @@ suppressMessages(library(tidyr))
 suppressMessages(library(generics))
 suppressMessages(source('Device_magic_functions.R'))
 
-# function to remove empty strings from vector
+
 Empty_string <-  function(x){
+  # function to remove empty strings from vector
   Vl= which(x=="" | x==" ")
   if (length(Vl)>0){
     Out= x[-Vl]
@@ -32,22 +44,31 @@ Empty_string <-  function(x){
 }
 
 CF_event_check <-  function(working, S){
+  # This function performs checks that the CF sheets entered into the database
+  # match what was recorded in the device magic forms. It looks at several
+  # potential error scenarios and will tell the user if any issues are found.
+  
   Warning= NA
   
+  # select the PMP values from the device magic form
   PMP= Empty_string(trimws(unlist(strsplit(working$time_barrel_period,','))))
   PMP=PMP[!(is.na(PMP)==TRUE)]
   
+  #select the number of trials from the device magic form 
   Trials= as.numeric(Empty_string(trimws(unlist(strsplit(working$trials_cf,',')))))
   Trials= Trials[!(is.na(Trials)==TRUE)]
   
+  # select calibration events from the database
   query= sprintf("Select * from chrl.calibration_events  WHERE SiteID=%s AND Date='%s'",S,Date)
   CF= dbGetQuery(con,query)
   
+  # if there are no CF in the database, raise error
   if (nrow(CF)==0){
     Warning= sprintf('No CF sheets have been uploaded from the field visit at site %s on %s. Please upload all sheets.',S,Date)
     return(c(0, Warning))
   }
   
+  #if there is a barrel refill,there should not be any Mid PMP recorded
   if(any(working$barrel_fill=='yes')){
     if ('Mid' %in% PMP){
       Warning= sprintf("As there was a barrel fill on %s at site %s, a Mid CF event should not have taken place. Please  review the CF sheets and device magic note",Date, S)
@@ -55,6 +76,7 @@ CF_event_check <-  function(working, S){
     } 
   }
   
+  # compare the number of trials recorded from the device magic form and database
   if (setequal(PMP,CF$pmp)==TRUE & (length(PMP)==length(CF$pmp))){
     for (x in c(1:length(PMP))){
       P= PMP[x]
@@ -69,25 +91,31 @@ CF_event_check <-  function(working, S){
         }
       }
     } 
+  
+    # if there is a discrepancy betweeen PMP value,  display the issue
   } else {
     Warning= paste(c("The CF table shows",CF$pmp, " measurements and the device magic forms show",PMP,". Please determine the correct CF measurements"),collapse=" ")
     return(c(0, Warning))
   }
   
+  # return a 1 if the code ran successfully
   return(c(1,Warning))
 }
 
-options(warn = - 1)  
+
+
+# connect to database
 con <<- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 
 ##----------------------------------------------------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------------------------------------------------
 
-#pull any entries from device magic table where at least one of the verification columns is no
+#pull any entries from device magic table where CF  verification columns is no
 query= "SELECT * FROM chrl.Device_Magic WHERE CF_added='No' "
 Field= dbGetQuery(con, query)
 
+# if there are no device magic entries to check
 if (nrow(Field)==0){
   print("No new CF events need to be checked.")
   
@@ -114,6 +142,7 @@ if (nrow(Field)==0){
       # do a check of the CF event table to make sure all documents have been uploaded and filled 
       # out correctly
       if (any(working$cf_event=='yes' & working$cf_added=='No')==TRUE){
+        
         #run CF event check function
         Num= CF_event_check(working, S)
         
@@ -144,6 +173,7 @@ if (nrow(Field)==0){
   }
 }
 
+# if there were any errors, use stop function to output the error
 if (any(grepl(0,Results)==TRUE)){
   dbDisconnect(con)
   options(warn = 0)
