@@ -4,16 +4,18 @@
 # July 2021
 # 
 # This code is designed to update the barrel fill,  sensor, and field visit tables in the database
-# after field work has been done. Using the autosalt field visit device magic form, information on what was
-# done at the site will be sent to the device magic table in the database. Using these data from the table,
+# after field work has been done. Using the autosalt field visit device magic form, information about
+# work at the site will be sent to the device magic table in the database. Using these data from the table,
 # the code sorts it and performs checks to make sure the data aligns with what is already in the database.
-# This allows the tables to be updated with little user intervention, unless there are descrepancies between 
-# the field data and what is in the database. In this case a message will print specifying to the user the issue.
+# This allows the tables to be updated with little user intervention, unless there are discrepancies between 
+# the field data and what is in the database. In this case a message will print the specific issue for the user
+# to fix.
 
 
 ##-----------------------------------------------------------------------------------------------
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
+
 # readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 # setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
@@ -52,7 +54,7 @@ con <<- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.ge
 ##-----------------------------------------------------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------------------------------------------------
 
-#pull the new field notes from the device magic table
+#pull any entries from device magic table where at least one of the verification columns is no
 query= "SELECT * FROM chrl.Device_Magic WHERE visit_added='No' OR barrel_added='No' OR sensor_added='No' OR CF_added='No' "
 Field= dbGetQuery(con, query)
 
@@ -99,16 +101,18 @@ if (nrow(Field)==0){
           print(sprintf("Error in updating Barrel Fill table- %s",Num[2]))
         }
         Results=append(Results,as.numeric(Num[1]))
-      
+      } else {
         # if a barrel fill didn't happen during a field visit, update the device magic table
         # to say it has been checked
-      } else {
           for (D in DMI){
             query= sprintf("UPDATE chrl.device_magic SET barrel_added='Yes' WHERE dmid=%s",D)
             dbSendQuery(con,query)
           }
         }
       
+      
+      ##-------------------------------------------------------------------------
+      ##-------------------------------------------------------------------------
       # checks and complies all changes made to the sensors
       if (any((working$ec_sensor_change=='yes'& working$sensor_added=='No'))==TRUE){
         # runs the sensor update function
@@ -118,6 +122,7 @@ if (nrow(Field)==0){
         for (C in Num[-1]){
           print(C)
         }
+        # if there are no errors, update the device magic table
         if (as.numeric(Num[1])==1){
           for (D in DMI){
             query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
@@ -125,17 +130,18 @@ if (nrow(Field)==0){
           }
         }
         Results=append(Results,as.numeric(Num[1]))
-        
+      } else {
         # if a sensor change didn't happen during a field visit, update the device magic table
         # to say it has been checked
-      } else {
         for (D in DMI){
           query= sprintf("UPDATE chrl.device_magic SET sensor_added='Yes' WHERE dmid=%s",D)
           dbSendQuery(con,query)
         }
       }
       
-      # do a check of the CF event table  to make sure all documents have been uploaded and filled 
+      ##-------------------------------------------------------------------------------
+      ##-------------------------------------------------------------------------------
+      # do a check of the CF event table to make sure all documents have been uploaded and filled 
       # out correctly
       if (any(working$cf_event=='yes' & working$cf_added=='No')==TRUE){
         #run CF event check function
@@ -150,22 +156,23 @@ if (nrow(Field)==0){
             query= sprintf("UPDATE chrl.device_magic SET cf_added='Yes' WHERE dmid=%s",D)
             dbSendQuery(con,query)
           }
+        } else {
           # if the CF values in the CF event tables do not correspond with what the 
           # device magic tables says, then print the problems for the log
-        } else {
           print(sprintf("Error in validating CF values- %s",Num[2]))
         }
         Results=append(Results,as.numeric(Num[1]))
         
-        # if a CF event didn't occur, mark the device magic table as checked
       } else {
+        # if a CF event didn't occur, mark the device magic table as checked
         for (D in DMI){
           query= sprintf("UPDATE chrl.device_magic SET cf_added='Yes' WHERE dmid=%s",D)
           dbSendQuery(con,query)
         }
       }
         
-        
+      #------------------------------------------------------------------------
+      #------------------------------------------------------------------------   
       #updates field visit table 
       if (any(working$visit_added=='No')==TRUE){
         # run field visit update function
@@ -191,6 +198,7 @@ if (nrow(Field)==0){
   }
 }
 
+#delete events from the device magic table that are older than 60 days and have been fully varified
 query=sprintf("SELECT DMID FROM chrl.device_magic WHERE date_visit < '%s' AND visit_added='Yes' AND barrel_added='Yes' AND sensor_added='Yes' AND CF_added='YES'",(Sys.Date()-60))
 delete_data=dbGetQuery(con,query)
 
@@ -201,10 +209,7 @@ if (nrow(delete_data)>0){
   }
 }
 
+dbDisconnect(con)
+options(warn = 0)
 
-
-
-# dbDisconnect(con)
-# options(warn = 0)
-print("------------------------------------------------------------------------------------")
 
