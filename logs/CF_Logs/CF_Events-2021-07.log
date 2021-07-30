@@ -1,0 +1,41 @@
+
+[1] "Date and Time:2021-07-10 19:01:02"
+Warning message:
+In readRenviron("C:/Program Files/R/R-4.1.0/.Renviron") :
+  file 'C:/Program Files/R/R-4.1.0/.Renviron' cannot be opened for reading
+Error: FATAL:  role "autosalt" does not exist
+Execution halted
+
+[1] "Date and Time:2021-07-12 12:27:55"
+Items so far: 
+200 300 400 434 
+[1] "There are no new CF events to upload"
+[1] "----------------------------------------------------"
+[1] "----------------------------------------------------"
+
+[1] "Date and Time:2021-07-12 12:29:56"
+Error: Failed to prepare query: ERROR:  syntax error at or near "hdhdhdhd"
+LINE 1: SELECT * hdhdhdhd FROM chrl.googledriveid
+                 ^
+Execution halted
+
+[1] "Date and Time:2021-07-17 19:01:01"
+Items so far: 
+200 300 400 434 
+[1] "There are no new CF events to upload"
+[1] "----------------------------------------------------"
+[1] "----------------------------------------------------"
+
+[1] "Date and Time:2021-07-24 19:01:01"
+Items so far: 
+100 
+[1] "There are no new CF events to upload"
+[1] "----------------------------------------------------"
+[1] "----------------------------------------------------"
+
+[1] "Date and Time:2021-07-26 15:35:27"
+Items so far: 
+200 300 400 434 
+[1] "There are no new CF events to upload"
+[1] "----------------------------------------------------"
+[1] "----------------------------------------------------"
