@@ -171,13 +171,19 @@ sensor_update <- function (working, S){
     
     # make sure data is not a duplicate of what is already in database
     DF= data.frame(probe_number_remove=Remove_Probe,sensor_type_remove=Remove_Type,serial_number_remove= Remove_SN, probe_number_add= New_Probe, sensor_type_add= New_Type, serial_number_add= New_SN, riverloc_add= New_RL)
-    Duplicate= data.frame(probe_number_remove= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"probe_number"],
-                          sensor_type_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"sensor_type"],
-                          serial_number_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"serial_number"],
-                          probe_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"probe_number"],
-                          sensor_type_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"sensor_type"],
-                          serial_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"serial_number"],
-                          riverloc_add=Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"river_loc"])
+    
+    if (is.null(nrow(Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"probe_number"]))==TRUE){
+      Duplicate=data.frame()
+    } else{
+      Duplicate= data.frame(probe_number_remove= Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"probe_number"],
+                            sensor_type_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"sensor_type"],
+                            serial_number_remove=Old_data[which(Old_data$siteid==S & Old_data$deactivation_date==Date),"serial_number"],
+                            probe_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"probe_number"],
+                            sensor_type_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"sensor_type"],
+                            serial_number_add= Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"serial_number"],
+                            riverloc_add=Old_data[which(Old_data$siteid==S & Old_data$install_date==Date),"river_loc"])
+    }
+
     
     if (nrow(Duplicate)>0){
       new_rows= anti_join(DF,Duplicate,by=c("probe_number_remove","sensor_type_remove","serial_number_remove","probe_number_add","sensor_type_add","serial_number_add","riverloc_add"))
