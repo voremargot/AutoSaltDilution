@@ -22,6 +22,7 @@
 ##-----------------------------------------------------------------------------------------------
 #setting up the environment
 readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+# readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = "-Xmx8g")
 options(warn = - 1)  
 
@@ -70,6 +71,8 @@ Num <- 1
 
 for (x in c(1:nrow(New_Events))){
   CF_File <- '/home/autosalt/AutoSaltDilution/R_code/working_directory/NewCF.xlsx'
+  New_Events[,'id'] = as.character(New_Events[,'id'])
+  # CF_File <- 'working_directory/NewCF.xlsx'
   EA <- data.frame(name= New_Events[x,'name'],Googleid=New_Events[x,'id'], added= Sys.Date(), Num= Num)
   Events_added <- rbind(Events_added,EA)
   
@@ -398,8 +401,9 @@ for (R in c(1:nrow(Sensor_Summary))){
                  Sensor_Summary[R,'Err'],
                  Sensor_Summary[R,'Flags'],
                  Sensor_Summary[R,'Notes'],
-                 sprintf("<a href=%s>%s</a>",CF_Summary[which(CF_Summary$Num==Number),'Link'],Events_added[which(Events_added$Num==Number),'name'])
+                 sprintf("<a href=%s>%s</a>",CF_Summary[which(CF_Summary$Num==Number),'Link'], Events_added[which(Events_added$Num==Number),'name'])
   )
+  query=  query[1]
   query <- gsub("\\n\\s+", " ", query)
   query <- gsub('NA',"NULL", query)
   query <- gsub("'NULL'","NULL",query)
@@ -427,8 +431,8 @@ for (E in CalE){
   query= sprintf("SELECT CalResultsID, SiteID,Temp FROM chrl.calibration_results WHERE CalEventID=%s",E)
   CR=dbGetQuery(con,query)
   
-  CR$PeriodID=CF_Summary[CF_Summary$CalEventID==E,'PeriodID']
-  CR$Date=CF_Summary[CF_Summary$CalEventID==E,'Date']
+  CR$PeriodID=unique(CF_Summary[CF_Summary$CalEventID==E,'PeriodID'])
+  CR$Date=unique(CF_Summary[CF_Summary$CalEventID==E,'Date'])
   
   CalResults= rbind(CalResults, CR)
 }
