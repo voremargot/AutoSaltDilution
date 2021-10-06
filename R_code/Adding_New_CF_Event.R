@@ -69,7 +69,7 @@ Num <- 1
 
 
 for (x in c(1:nrow(New_Events))){
-  CF_File <- 'working_directory/NewCF.xlsx'
+  CF_File <- '/home/autosalt/AutoSaltDilution/R_code/working_directory/NewCF.xlsx'
   EA <- data.frame(name= New_Events[x,'name'],Googleid=New_Events[x,'id'], added= Sys.Date(), Num= Num)
   Events_added <- rbind(Events_added,EA)
   
