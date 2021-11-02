@@ -39,7 +39,7 @@ source("AutoSalt_Functions.R")
 
 #connect to database and Google Drive
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(email=Sys.getenv('email_gdrive'))
+drive_auth()
 
 # Prompts to define what event you are altering
 EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
@@ -99,7 +99,8 @@ Sensors <- unique(All_Dis$sensorid)
 Salt_Vol= Event_to_edit$salt_volume
 
 #download the original excel sheet used for calculations and load as workbook
-drive_download(sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit),"working_directory/Event_to_fix.xlsx", overwrite = TRUE)
+drive_download(
+  sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),"working_directory/Event_to_fix.xlsx", overwrite = TRUE)
 wb= loadWorkbook("working_directory/Event_to_fix.xlsx")
 
 
