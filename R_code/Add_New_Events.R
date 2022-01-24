@@ -161,7 +161,7 @@ for (S in Stations){
     
     #only evaluate the event if there are enough CF values
     Usable_trials= sum(Barrel_Period_CFs$trial)
-    if (Usable_trials < 4 & is.null(Periods$ending_date)==TRUE){
+    if (Usable_trials < 4 & is.na(Periods$ending_date)==TRUE){
       print(sprintf('Not enough valid CF measurements to evaluate Event %i at site %i:SKIPPING',Event_Num,SiteID))
       next()
     }
@@ -248,17 +248,23 @@ for (S in Stations){
       Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
       
       Stage_Subset <- Stage[(Stage$DoseEventID==Event_Num),]
-      Stage_Subset$Sec <- c(1:nrow(Stage_Subset))
-      
-      Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
-      Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
-      
-      #stage summary statistics
-      Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
-      Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)
-      Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
-      Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+      if (nrow(Stage_Subset)==0){
+        Stage_Average <- NA
+        Stage_Min <- NA
+        Stage_Max <- NA
+        Stage_Std <- NA
+      } else{
+        Stage_Subset$Sec <- c(1:nrow(Stage_Subset))
         
+        Stage_header <- colnames(Stage_Subset)[grep('PLS', colnames(Stage_Subset), ignore.case=T)]
+        Stage_Subset$PLS_Lvl <- Stage_Subset[,Stage_header]*100
+        
+        #stage summary statistics
+        Stage_Average <- mean(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+        Stage_Min <- min(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+        Stage_Max <- max(Stage_Subset$PLS_Lvl, na.rm=TRUE)
+        Stage_Std <- sd(Stage_Subset$PLS_Lvl,na.rm=TRUE)
+      }
       #Add a flag indicating no data
       if (is.na(Overall_Flags)==TRUE){
         Overall_Flags='ND'
@@ -293,9 +299,10 @@ for (S in Stations){
     Stage$TIMESTAMP <- strptime(Stage$TIMESTAMP, "%Y-%m-%d %H:%M:%S")
     
     # Add a column of seconds since start of event
-    EC$Sec <- c(1:nrow(EC))
     
-    # Select only temp corrected columns of EC to analyze (ECT if possible)
+    EC$Sec <- c(1:nrow(EC))
+  
+  # Select only temp corrected columns of EC to analyze (ECT if possible)
     Headers= Column_Names(EC)
     EC= select(EC, c('TIMESTAMP','Sec',all_of(Headers)))
     
@@ -307,7 +314,7 @@ for (S in Stations){
       }
     }
     EC=EC[ , ! names(EC) %in% c('TY')]
-
+  
     
   ## ----------------------------------------------------------------------------------------------------------------------------
   ## -----------------------------------------Calculating Start and Stop Times and exploring the EC data-------------------------
