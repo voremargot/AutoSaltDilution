@@ -5,7 +5,7 @@ setsid Rscript /home/autosalt/AutoSaltDilution/R_code/CF_check.R >> /home/autosa
 CODE=$?
 if [ $CODE -ne 0  ]
 then
-        sendmail margot.vore@viu.ca </home/autosalt/AutoSaltDilution/other/Email_Field_Visits.txt
+       /usr/sbin/sendmail  autosalt.alerts@hakai.org </home/autosalt/AutoSaltDilution/other/Email_Field_Visits.txt
 fi
 
 

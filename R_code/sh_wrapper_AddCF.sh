@@ -5,7 +5,6 @@ setsid Rscript /home/autosalt/AutoSaltDilution/R_code/Adding_New_CF_Event.R >> /
 CODE=$?
 if [ $CODE -ne 0 ]
 then
-        sendmail margot.vore@viu.ca </home/autosalt/AutoSaltDilution/other/Email_Add_CF_Events.txt
+        /usr/sbin/sendmail Margot.Vore@viu.ca </home/autosalt/AutoSaltDilution/other/Email_Add_CF_Events.txt
 fi
-
 
