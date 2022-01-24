@@ -24,7 +24,7 @@
 # readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
 readRenviron('C:/Program Files/R/R-3.6.2/.Renviron')
 options(java.parameters = "-Xmx8g")
-options(warn = - 1)  
+options(warn = - 1)
 
 #libraries
 suppressMessages(library(googledrive))
@@ -33,22 +33,23 @@ suppressMessages(library(openxlsx))
 suppressMessages(library(lubridate))
 suppressMessages(library(stringi))
 suppressMessages(library(prodlim))
+suppressMessages(library(broom))
 
-#connect to database and google drive
+# #connect to database and google drive
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+# drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+# drive_auth()
 
-
-##-----------------------------------------------------------------------------------
-##-------------- Finding CF field sheets that are new to the drive------------------
-##----------------------------------------------------------------------------------
+# ##-----------------------------------------------------------------------------------
+# ##-------------- Finding CF field sheets that are new to the drive------------------
+# ##----------------------------------------------------------------------------------
 #print statements for log
 cat("\n")
 print('----------------------------------------------------')
 print('----------------------------------------------------')
 print(sprintf("Date and Time:%s", Sys.time()))
 
-#select all entries from the googledriveid table 
+#select all entries from the googledriveid table
 query <- sprintf("SELECT * FROM chrl.googledriveid")
 Old_CF_Events <- dbGetQuery(con, query)
 
@@ -69,11 +70,11 @@ CF_Summary <- data.frame(); Sensor_Summary <- data.frame(); Events_added <- data
 Num <- 1
 
 
-for (x in c(1:nrow(New_Events))){
+for (x in c(1:nrow(New_Events))){ 
+  New_Events[x,'id_char'] = as.character(New_Events[x,'id'])
   # CF_File <- '/home/autosalt/AutoSaltDilution/R_code/working_directory/NewCF.xlsx'
-  New_Events[,'id'] = as.character(New_Events[,'id'])
   CF_File <- 'working_directory/NewCF.xlsx'
-  EA <- data.frame(name= New_Events[x,'name'],Googleid=New_Events[x,'id'], added= Sys.Date(), Num= Num)
+  EA <- data.frame(name= New_Events[x,'name'],Googleid=New_Events[x,'id_char'], added= Sys.Date(), Num= Num)
   Events_added <- rbind(Events_added,EA)
   
   # Downloads file locally and reads it into R
@@ -135,6 +136,12 @@ for (x in c(1:nrow(New_Events))){
     # get sensor info
     SenType <- workbook[(Sen+1),5]
     SerialNum <- workbook[(Sen+1),6]
+    
+    
+    if (is.na(SerialNum) == TRUE & is.na(SenType)==FALSE){
+      stop(sprintf("Sensor serial numbers were not entered for file %s",New_Events[x,'name']))
+    }
+      
     if (is.na(SenType)==TRUE & is.na(SerialNum)==TRUE){
       next()
     }
@@ -176,19 +183,32 @@ for (x in c(1:nrow(New_Events))){
   #extract CF and Error information 
   for (Sen in c(1:nrow(SensorInfo))){
     if (Sen==1){
-      CF <- as.numeric(workbook[15,12])*10^6
-      Err <- as.numeric(workbook[23,11])
+       Salt_conc= as.numeric(workbook[15:32,9])
+       EC = as.numeric(workbook[15:32,8])
+       reg = tidy(lm(Salt_conc ~ EC))
+       CF = reg[2,2]*10^6
+       Err = (reg[2,3]*2)/reg[2,2] *100
     } else if (Sen==2){
-      CF <- as.numeric(workbook[43,12])*10^6
-      Err <- as.numeric(workbook[50,11])
+      Salt_conc= as.numeric(workbook[43:60,9])
+      EC = as.numeric(workbook[43:60,8])
+      reg = tidy(lm(Salt_conc ~ EC))
+      CF = reg[2,2]*10^6
+      Err = (reg[2,3]*2)/reg[2,2] *100
       
     } else if (Sen==3){
-      CF <- as.numeric(workbook[71,12])*10^6
-      Err <- as.numeric(workbook[78,11])
+      Salt_conc= as.numeric(workbook[71:88,9])
+      EC = as.numeric(workbook[71:88,8])
+      reg = tidy(lm(Salt_conc ~ EC))
+      CF = reg[2,2]*10^6
+      Err = (reg[2,3]*2)/reg[2,2] *100
       
     } else if (Sen==4){
-      CF <- as.numeric(workbook[99,12])*10^6
-      Err <- as.numeric(workbook[106,11])
+      
+      Salt_conc= as.numeric(workbook[99:116,9])
+      EC = as.numeric(workbook[99:116,8])
+      reg = tidy(lm(Salt_conc ~ EC))
+      CF = reg[2,2]*10^6
+      Err = (reg[2,3]*2)/reg[2,2] *100
     }
     
     
@@ -250,7 +270,7 @@ for (r in c(1:nrow(Uni))){
     # summarize results
     Num= CF_Summary[CF_Summary$PMP==Uni[r,"PMP"] & CF_Summary$PeriodID==Uni[r,'PeriodID'] &
                       CF_Summary$SiteID==Uni[r,"SiteID"] & CF_Summary$Date==Uni[r,"Date"] & 
-                      CF_Summary$Loc==Uni[r,"Loc"]]
+                      CF_Summary$Loc==Uni[r,"Loc"],]
     
     #specify the entries are new
     for (N in Num$Num){
@@ -350,7 +370,7 @@ for (R in c(1:nrow(Events_added))){
   #insert google drive links
   query <- sprintf("INSERT INTO chrl.googledriveid (file_name,driveid,date_added,caleventid) VALUES ('%s','%s','%s',%s)",
             Events_added[R,'name'],
-            Events_added[R,'id'],
+            Events_added[R,'id_char'],
             Events_added[R,'added'],
             CF_Summary[which(CF_Summary$Num==Number),'CalEventID'])
   query <- gsub("\\n\\s+", " ", query)
@@ -403,7 +423,7 @@ for (R in c(1:nrow(Sensor_Summary))){
                  Sensor_Summary[R,'Notes'],
                  sprintf("<a href=%s>%s</a>",CF_Summary[which(CF_Summary$Num==Number),'Link'], Events_added[which(Events_added$Num==Number),'name'])
   )
-  query=  query[1]
+  # query=  query[1]
   query <- gsub("\\n\\s+", " ", query)
   query <- gsub('NA',"NULL", query)
   query <- gsub("'NULL'","NULL",query)
@@ -468,10 +488,10 @@ for (P in Unique_periods){
       # should be incorporated in calculation
       if (nrow(Apply)> 0){
         print(sprintf("Dump event %s at %s need to be recalculated with new CF values and has temporarily been deleted",
-                      sub_events[SD,'EventID'], sub_events[SD,'SiteID']))
-        query= sprintf("DELETE FROM chrl.autosalt_summary WHERE EventID=%s and SiteID=%s"
-                       ,sub_events[SD,'EventID'],sub_events[SD,'SiteID'])
-        dbSendQuery(con,query)
+                      sub_events[SD,'eventid'], sub_events[SD,'siteid']))
+        # query= sprintf("DELETE FROM chrl.autosalt_summary WHERE EventID=%s and SiteID=%s"
+        #                ,sub_events[SD,'eventid'],sub_events[SD,'siteid'])
+        # dbSendQuery(con,query)
       }
     }
   }

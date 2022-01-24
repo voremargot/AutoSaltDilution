@@ -39,7 +39,7 @@ source("AutoSalt_Functions.R")
 
 #connect to database and Google Drive
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(email=Sys.getenv('email_gdrive'))
+drive_auth()
 
 # Prompts to define what event you are altering
 EventID= as.numeric(readline(prompt='EventID where start/stop times are changed: '))
@@ -99,7 +99,8 @@ Sensors <- unique(All_Dis$sensorid)
 Salt_Vol= Event_to_edit$salt_volume
 
 #download the original excel sheet used for calculations and load as workbook
-drive_download(sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit[1,'date']),"working_directory/Event_to_fix.xlsx", overwrite = TRUE)
+drive_download(
+  sprintf("AutoSalt_Hakai_Project/Discharge_Calculations/AutoSalt_Events/%s.WS%s.%s.xlsx",EventID,SiteID,Event_to_edit$date),"working_directory/Event_to_fix.xlsx", overwrite = TRUE)
 wb= loadWorkbook("working_directory/Event_to_fix.xlsx")
 
 
@@ -244,9 +245,7 @@ Mixing <- AutoSalt_Mixing(Discharge_Results[which(Discharge_Results$Used=='Y'),]
 ##---------------------------------------------------------------------------
 
 #update autosalt summary table
-Query= sprintf("UPDATE chrl.autosalt_summary SET stage_average=%s, stage_min=%s, stage_max=%s, stage_std=%s, stage_dir='%s',
-               discharge_avg=%s, uncert=%s, mixing=%s WHERE eventid=%s AND siteid=%s",mean(Stage_Summary$StageAvg),mean(Stage_Summary$StageMin),
-               mean(Stage_Summary$StageMax),mean(Stage_Summary$StageStd),Stage_Dir,Average_Discharge,TotalUncert,Mixing,EventID,SiteID)
+Query= sprintf("UPDATE chrl.autosalt_summary SET discharge_avg=%s, uncert=%s, mixing=%s WHERE eventid=%s AND siteid=%s",Average_Discharge,TotalUncert,Mixing,EventID,SiteID)
 Query <- gsub("\\n\\s+", " ", Query)
 Query <- gsub('NA',"NULL", Query)
 Query <- gsub("'NULL'","NULL",Query)
