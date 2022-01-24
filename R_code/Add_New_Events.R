@@ -1375,7 +1375,10 @@ for (S in Stations){
   ##-------------------------------------------Enter data into database------------------------------------------
   ##-----------------------------------------------------------------------------------------------------------
 
-for (r in c(1:nrow(Discharge_Summary))){
+  if(nrow(Discharge_Summary) ==0){
+    next()
+  }
+  for (r in c(1:nrow(Discharge_Summary))){
 
    Query <- sprintf("INSERT INTO chrl.autosalt_summary VALUES (%s,%s,%s,'%s',%s,'%s',%s,%s,%s,%s,%s,'%s',%s,%s,%s,'%s','%s',%s,'%s');",
            Discharge_Summary[r,"EventID"],
