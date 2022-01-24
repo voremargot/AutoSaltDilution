@@ -5,6 +5,6 @@ setsid Rscript /home/autosalt/AutoSaltDilution/R_code/Add_New_Events.R >> /home/
 CODE=$?
 if [ $CODE -ne 0  ]
 then
-	/usr/sbin/sendmail autosalt.alerts@hakai.org </home/autosalt/AutoSaltDilution/other/Email_Add_New_Event.txt
+	/usr/sbin/sendmail Margot.Vore@viu.ca </home/autosalt/AutoSaltDilution/other/Email_Add_New_Event.txt
 fi 
 
