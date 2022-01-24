@@ -38,7 +38,6 @@ suppressMessages(library(broom))
 # #connect to database and google drive
 con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
 drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
-drive_auth()
 
 # ##-----------------------------------------------------------------------------------
 # ##-------------- Finding CF field sheets that are new to the drive------------------
