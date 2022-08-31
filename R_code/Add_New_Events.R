@@ -1274,8 +1274,7 @@ for (S in Stations){
       } else {
         Discharge_Results[R,'Flags'] <- EC_curve_results[EC_curve_results$SensorID==SID,'Comment']
         FG= unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ","))
-        
-        print(FG)
+      
         if (length(FG)==1){
           if (is.na(FG)==TRUE){
             Discharge_Results[R,'Flag_count']=0
