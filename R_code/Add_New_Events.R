@@ -78,7 +78,7 @@ if (computer=="local"){
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626,703,844,1015)
+Stations= 1015 #c(626,703,844,1015)
 for (S in Stations){
   
   ##############################################
@@ -1061,6 +1061,10 @@ for (S in Stations){
       
       # Get all CF records associated with a particular ID
       for (Sensor_ID in unique(Cal_Result$sensorid)){
+        
+        if (is.null(Sensor_ID) == TRUE){
+          stop("A sensor in the CF details has a NULL value. Please remedy the situation and try again")
+        }
         
         query <- sprintf("SELECT * FROM chrl.sensors WHERE (sensorid=%i)",Sensor_ID)
         Sensor_info <- dbGetQuery(con, query)
