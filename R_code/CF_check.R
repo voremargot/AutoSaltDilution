@@ -12,10 +12,10 @@
 ## ---------------------------Setting up the work space------------------------------------------
 ##-----------------------------------------------------------------------------------------------
 # set working environment
-#readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
-#setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
- setwd("/home/autosalt/AutoSaltDilution/R_code")
+readRenviron('C:/Program Files/R/R-4.1.0/.Renviron')
+#readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code")
+#setwd("/home/autosalt/AutoSaltDilution/R_code")
 
 
 options(java.parameters = "-Xmx8g")
@@ -115,12 +115,13 @@ con <<- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.ge
 query= "SELECT * FROM chrl.Device_Magic WHERE CF_added='No' "
 Field= dbGetQuery(con, query)
 
+Results=c()
+
 # if there are no device magic entries to check
 if (nrow(Field)==0){
   print("No new CF events need to be checked.")
   
 } else {
-  Results=c()
   
   # pull out all field visit dates
   Visit_Dates= unique(Field$date_visit)

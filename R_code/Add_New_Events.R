@@ -31,11 +31,23 @@ cat("\n")
 print("---------------------------------------------------------")
 print("---------------------------------------------------------")
 print(sprintf("Date and Time:%s", Sys.time()))
-readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+computer = "local" # or hakai
+
+if (computer == "local"){
+  readRenviron('C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/.Renviron')
+} else if (computer == "hakai"){
+  readRenviron('/home/autosalt/AutoSaltDilution/other/.Renviron')
+}
 options(java.parameters = "-Xmx8g")
 gg=gc()
 
-setwd("/home/autosalt/AutoSaltDilution/R_code")
+
+if (computer=="local"){
+  setwd("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/GitHub/R_code/")
+} else if (computer == 'hakai') {
+  setwd("/home/autosalt/AutoSaltDilution/R_code")
+}
+
 
 #Libraries
 suppressMessages(library(DBI))
@@ -49,8 +61,16 @@ source("AutoSalt_Functions.R")
 options(warn = - 1)  
 
 # Connect to database and google drive
-con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
-drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+
+
+if (computer=="local"){
+  con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
+  drive_auth(path="C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Oauth_try.json")
+} else if (computer=="hakai"){
+  con <- dbConnect(RPostgres::Postgres(), dbname=Sys.getenv('dbname'),host=Sys.getenv('host'),user=Sys.getenv('user'),password=Sys.getenv('password'))
+  drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
+}
+
 
 
 ## ---------------------------------------------------------------------------------------------
@@ -58,17 +78,24 @@ drive_auth(path="/home/autosalt/AutoSaltDilution/other/Oauth.json")
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626,703,844,1015)
+Stations= 626 # c(626,703,844,1015)
 for (S in Stations){
   
   ##############################################
   # Finding new events for discharge calculation
   ###############################################
-
-  if (S==626){
-    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
-  } else {
-    DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
+  if (computer == "hakai") {
+      if (S==626){
+        DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
+      } else {
+        DumpEvent_File <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
+      }
+  } else if (computer == "local"){
+      if (S==626){
+        DumpEvent_File <- sprintf("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Data_From_Goose/Data_From_Goose_11.08.2022/saltDose/CollatedData/Stations/SSN%i/SSN%iAS_DoseEvent.dat.csv",S,S)
+      } else {
+        DumpEvent_File <- sprintf("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Data_From_Goose/Data_From_Goose_11.08.2022/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_DoseEvent.dat.csv",S,S)
+      }
   }
   
   # Reading in newly downloaded event file
@@ -182,7 +209,12 @@ for (S in Stations){
    # EC_filename <- sprintf("working_directory/%i_ECdata_%s.csv",S,Event_Num)
    # exists <- curl_fetch_disk(
     #  sprintf("https://hecate.hakai.org/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num),EC_filename)
-   EC_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num)
+   if (computer == 'hakai'){
+     EC_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num)
+   } else if (computer == 'local'){
+     EC_filename <- sprintf("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Data_From_Goose/Data_From_Goose_11.08.2022/saltDose/CollatedData/Stations/SSN%i/%s.csv",S,Event_Num)
+   }
+   
     
     
     # Determine if the EC file has data in it  
@@ -286,7 +318,12 @@ for (S in Stations){
     ###############################
     # Download stage data for event
     ###############################
-    Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
+    if (computer == 'hakai'){
+      Stage_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
+    } else if (computer == 'local'){
+      Stage_filename <- sprintf("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Data_From_Goose/Data_From_Goose_11.08.2022/saltDose/CollatedData/Stations/SSN%i/SSN%iUS_FiveSecDoseStage.dat.csv",S,S)
+    }
+    
     CNames <- read.csv(Stage_filename, skip = 1, header = F, nrows = 1,as.is=T)
     Stage <- read.csv(Stage_filename,skip=4, header=F,as.is=T)
     colnames(Stage) <- CNames
