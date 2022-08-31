@@ -31,7 +31,7 @@ cat("\n")
 print("---------------------------------------------------------")
 print("---------------------------------------------------------")
 print(sprintf("Date and Time:%s", Sys.time()))
-computer = "local" # or hakai
+computer = "hakai" # or local
 
 if (computer == "local"){
   readRenviron('C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/.Renviron')
