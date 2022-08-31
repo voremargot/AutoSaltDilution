@@ -78,7 +78,7 @@ if (computer=="local"){
 ## ---------------------------------------------------------------------------------------------
 
 # List of active stations
-Stations= c(626,703,844,1015)
+Stations= 703 #c(626,703,844,1015)
 for (S in Stations){
   
   ##############################################
@@ -225,10 +225,13 @@ for (S in Stations){
     })
     
     # If there is no data in the EC file, read in autodose file to see if event was captured
-    if (CNames=='EMPTY'){
+    if (is.data.frame(CNames)==FALSE){
       #AutoDose_filename= sprintf("working_directory/%i_ECAutoDose.csv",S)
-      AutoDose_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
-      
+      if (computer == 'hakai'){
+        AutoDose_filename <- sprintf("/home/hakai/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
+      } else if (computer=="local"){
+        AutoDose_filename <- sprintf("C:/Users/margo.DESKTOP-T66VM01/Desktop/VIU/Data_From_Goose/Data_From_Goose_11.08.2022/saltDose/CollatedData/Stations/SSN%i/SSN%iDS_AutoDoseEvent.dat.csv",S,S)
+      }
       CNames <- read.csv(AutoDose_filename, skip = 1, header = F, nrows = 1,as.is=T)
       EC_Dose <- read.csv(AutoDose_filename,skip=4, header=F,as.is=T)
       colnames(EC_Dose)<- CNames[,1:ncol(CNames)]
@@ -1271,8 +1274,14 @@ for (S in Stations){
       } else {
         Discharge_Results[R,'Flags'] <- EC_curve_results[EC_curve_results$SensorID==SID,'Comment']
         FG= unlist(strsplit(EC_curve_results[EC_curve_results$SensorID==SID,'Comment'], ","))
-        if (is.na(FG)==TRUE){
-          Discharge_Results[R,'Flag_count']=0
+        
+        print(FG)
+        if (length(FG)==1){
+          if (is.na(FG)==TRUE){
+            Discharge_Results[R,'Flag_count']=0
+          } else {
+            Discharge_Results[R,'Flag_count']= 1
+          }
         } else {
           Discharge_Results[R,'Flag_count'] <- length(FG)
         }
